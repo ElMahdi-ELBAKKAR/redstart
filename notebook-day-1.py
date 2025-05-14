@@ -213,6 +213,14 @@ def _(mo):
     return
 
 
+@app.cell
+def _():
+    g = 1 
+    M = 1 
+    l = 1 
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -220,6 +228,17 @@ def _(mo):
     ## 🧩 Forces
 
     Compute the force $(f_x, f_y) \in \mathbb{R}^2$ applied to the booster by the reactor.
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    $f_x = f(\cos\theta \cos\phi - \sin \theta \sin \phi )$  
+    $f_y = f(\cos\theta \sin\phi + \sin \theta \cos \phi )$
     """
     )
     return
