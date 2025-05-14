@@ -1,10 +1,16 @@
 cff-version: 1.2.0
 message: "If you use this project, please cite it as below."
 authors:
-- family-names: "ELBAKKAR" ; "ET TORI" ; "EL YAAGOUBI" ; "AMAHMID"
-  given-names: "ElMahdi" ; "Zakaria" ; "Adam" ; "Samia"
+- family-names: "ELBAKKAR"
+  given-names: "ElMahdi"
   orcid: "https://orcid.org/0000-0003-4685-8099"
+- family-names: "ET TORI"
+  given-names: "Zakaria"
+- family-names: "EL YAAGOUBI"
+  given-names: "Adam"
+- family-names: "AMAHMID"
+  given-names: "Samia"
 title: "Redstart"
-version: 0.0.1
-date-released: 2025-05-14
+version: "0.0.1"
+date-released: "2025-05-14"
 url: "https://github.com/boisgera/redstart"
