@@ -237,8 +237,27 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    $f_x = f(\cos\theta \cos\phi - \sin \theta \sin \phi )$  
-    $f_y = f(\cos\theta \sin\phi + \sin \theta \cos \phi )$
+    ## Answer:
+
+    The force $\vec{f} = (f_x, f_y)$ applied to the booster by the reactor is given by:
+
+    $$
+    f_x = -f \sin(\theta + \phi)
+    $$
+
+    $$
+    f_y = f \cos(\theta + \phi)
+    $$
+
+    After expanding $\cos(\theta + \phi)$ and $\sin(\theta + \phi)$, we get:
+
+    $$
+    f_x = f(-\cos\theta \sin\phi - \sin\theta \cos\phi)
+    $$
+
+    $$
+    f_y = f(\cos\theta \cos\phi - \sin\theta \sin\phi)
+    $$
     """
     )
     return
