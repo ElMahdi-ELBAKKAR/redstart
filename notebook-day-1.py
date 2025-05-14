@@ -542,21 +542,21 @@ def _(l, np, plt, redstart_solve):
     def free_fall_example():
         t_span = [0.0, 5.0]
         y0 = [0.0, 0.0, 10.0, 0.0, 0.0, 0.0]  # [x, dx, y, dy, theta, dtheta]
-    
+
         def f_phi(t, y):
             return np.array([0.0, 0.0])  # No input force or tilt
-    
+
         sol = redstart_solve(t_span, y0, f_phi)
-    
+
         # Time points
         t = np.linspace(t_span[0], t_span[1], 1000)
-    
+
         # Extract state components
         x_t, _, y_t, _, theta_t, _ = sol(t)
-    
+
         # Create the side-by-side plots
         fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-    
+
         # x(t) plot
         axes[0].plot(t, x_t, color="blue", label=r"$x(t)$ (horizontal position)")
         axes[0].set_title("Horizontal Position $x(t)$")
@@ -741,6 +741,77 @@ def _(mo):
     The function shall accept the parameters `x`, `y`, `theta`, `f` and `phi`.
     """
     )
+    return
+
+
+@app.cell
+def _(M, g, l, np, plt):
+    def draw_booster(x, y, theta, f, phi):
+
+
+        longueur = 2 * l
+        largeur = 0.2
+
+        # Booster : rectangle centré en (x, y)
+        booster_shape = np.array([
+            [-largeur / 2, -longueur / 2],
+            [ largeur / 2, -longueur / 2],
+            [ largeur / 2,  longueur / 2],
+            [-largeur / 2,  longueur / 2]
+        ])
+
+   
+        adjusted_theta =  theta  
+
+    
+        R = np.array([
+            [np.cos(adjusted_theta), -np.sin(adjusted_theta)],
+            [np.sin(adjusted_theta),  np.cos(adjusted_theta)]
+        ])
+
+   
+        booster_world = booster_shape @ R.T
+        booster_world[:, 0] += x
+        booster_world[:, 1] += y
+
+        booster_patch = plt.Polygon(booster_world, closed=True, color='black', label="Booster")
+        plt.gca().add_patch(booster_patch)
+
+        base_local = np.array([0, -longueur / 2]) @ R.T + np.array([x, y])
+
+        thrust_angle = -adjusted_theta - phi - np.pi  
+        flame_length = f * l / (M*g)
+        flame_dx = flame_length * np.sin(thrust_angle)
+        flame_dy = flame_length * np.cos(thrust_angle)
+        plt.plot([base_local[0], base_local[0] + flame_dx],
+             [base_local[1], base_local[1] + flame_dy],
+             color='red', linewidth=2, label="Force f")
+
+
+
+    
+        zone_length = 2.0
+        zone_height = 0.25
+        x0, y0 = -1, 0
+        zone = np.array([
+            [x0, y0],
+            [x0 + zone_length, y0],
+            [x0 + zone_length, y0 - zone_height],
+            [x0, y0 - zone_height]
+        ])
+        landing_patch = plt.Polygon(zone, closed=True, color='blue', label="Zone d'atterrissage")
+        plt.gca().add_patch(landing_patch)
+
+
+        plt.axis('equal')
+        plt.grid(True)
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.legend()
+        plt.show()
+
+
+    draw_booster(x=0, y=10, theta=np.pi/4, f=M*g,  phi=0)
     return
 
 
