@@ -233,11 +233,11 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-    ## Answer:
+    ## ⭐ Answer
 
     The force $\vec{f} = (f_x, f_y)$ applied to the booster by the reactor is given by:
 
