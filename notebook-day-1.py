@@ -218,7 +218,7 @@ def _():
     g = 1 
     M = 1 
     l = 1 
-    return M, l
+    return M, g, l
 
 
 @app.cell(hide_code=True)
@@ -375,7 +375,7 @@ def _(mo):
 
 @app.cell
 def _(M, l):
-    J = (1/3)*M*l
+    J = (1/3) * M * (l ** 2)
     return (J,)
 
 
@@ -403,68 +403,55 @@ def _(mo):
         r"""
     ## ⭐ Answer
 
-    ### Rotational Dynamics of the Booster
+    ### Équation de Rotation du Booster
 
 
 
-    The total torque \(\tau\) acting on the booster is the sum of the torques produced by the reactor force and gravity:
-
-    \[
-    \tau = \ell \cdot f \sin(\phi) - M g \ell \sin(\theta)
-    \]
-
- 
-
-    ### Rotational Dynamics Equation
-
-    Using **Newton's second law for rotation**, the rotational equation can be written as:
+    Le moment **\(\tau\)** appliqué au booster par le réacteur est donné par :
 
     \[
-    J \frac{d^2 \theta}{dt^2} = \tau
+    \tau = -\ell \cdot f \sin(\theta + \phi)
     \]
 
-    Substituting the total torque:
+
+
+    ## Équation de Rotation (sans gravité)
+
+    En appliquant la deuxième loi de Newton pour la rotation :
 
     \[
-    J \frac{d^2 \theta}{dt^2} = \ell \cdot f \sin(\phi) - M g \ell \sin(\theta)
+    J \frac{d^2 \theta}{dt^2} = -\ell \cdot f \sin(\theta + \phi)
     \]
 
-    ## Substituting the Moment of Inertia
+    ## En Remplaçant le Moment d'Inertie
 
-    Since the booster is modeled as a rigid tube of length \(2\ell\), its moment of inertia about the center of mass is:
+    Le moment d'inertie du booster, modélisé comme un tube rigide de longueur \(2\ell\) avec une distribution de masse uniforme, est donné par :
 
     \[
     J = \frac{1}{3} M \ell^2
     \]
 
-    Substituting \(J\) into the rotational equation:
+    Substituons cette valeur :
 
     \[
-    \frac{1}{3} M \ell^2 \frac{d^2 \theta}{dt^2} = \ell \cdot f \sin(\phi) - M g \ell \sin(\theta)
+    \frac{1}{3} M \ell^2 \frac{d^2 \theta}{dt^2} = -\ell \cdot f \sin(\theta + \phi)
     \]
 
-    ## Simplifying the Equation
+    ## Simplification
 
-    Canceling out common terms (\(\ell\)):
+    En simplifiant cette équation :
 
     \[
-    \frac{1}{3} M \ell \frac{d^2 \theta}{dt^2} = f \sin(\phi) - M g \sin(\theta)
+    \frac{d^2 \theta}{dt^2} = -\frac{3 f \sin(\theta + \phi)}{M \ell}
     \]
 
-    Multiply both sides by \(\frac{3}{M \ell}\):
+    ## Forme Finale
+
+    L'équation pour l'angle **\(\theta\)** est donc :
 
     \[
-    \frac{d^2 \theta}{dt^2} = \frac{3}{M \ell} \left[ f \sin(\phi) - M g \sin(\theta) \right]
+    \frac{d^2 \theta}{dt^2} = -\frac{3 f \sin(\theta + \phi)}{M \ell}
     \]
-
-    Therefore, the equation governing the tilt angle \(\theta\) of the booster becomes:
-
-    \[
-    \frac{d^2 \theta}{dt^2} = \frac{3 f \sin(\phi)}{M \ell} - 3 g \sin(\theta) / \ell
-    \]
-
-
-
     """
     )
     return
@@ -511,6 +498,73 @@ def _(mo):
     Test this typical example with your function `redstart_solve` and check that its graphical output makes sense.
     """
     )
+    return
+
+
+@app.cell
+def _(M, g, l, np, plt):
+
+
+    from scipy.integrate import solve_ivp
+
+    # Define the main solver function
+    def redstart_solve(t_span, y0, f_phi):
+  
+
+        # Moment of inertia for a uniform rod
+        J = (1 / 3) * M * (l**2)
+
+        # Define the ODE system
+        def booster_dynamics(t, y):
+            # Unpack the state vector
+            x, dx, y_pos, dy, theta, dtheta = y
+        
+            # Get the current force and angle
+            f, phi = f_phi(t, y)
+
+            # Translational acceleration (fx, fy)
+            fx = -f * np.sin(theta + phi)
+            fy = f * np.cos(theta + phi) - M * g
+
+            # Rotational acceleration (d2theta)
+            d2theta = - (3 * f * np.sin(theta + phi)) / (M * l)
+
+            # Return the full state derivative
+            return [dx, fx / M, dy, fy / M, dtheta, d2theta]
+
+        # Solve the ODE
+        sol = solve_ivp(booster_dynamics, t_span, y0, dense_output=True)
+
+        # Return the interpolation function
+        return sol.sol
+
+    # Test case: Free Fall Example
+    def free_fall_example():
+        t_span = [0.0, 5.0]
+        y0 = [0.0, 0.0, 10.0, 0.0, 0.0, 0.0]  # [x, dx, y, dy, theta, dtheta]
+    
+        def f_phi(t, y):
+            return np.array([0.0, 0.0])  # No input force or tilt
+    
+        sol = redstart_solve(t_span, y0, f_phi)
+    
+        # Plot the y position over time
+        t = np.linspace(t_span[0], t_span[1], 1000)
+        y_t = sol(t)[2]
+    
+        plt.plot(t, y_t, label=r"$y(t)$ (height in meters)")
+        plt.plot(t, l * np.ones_like(t), color="grey", ls="--", label=r"$y=\ell$")
+        plt.title("Free Fall")
+        plt.xlabel("time $t$")
+        plt.ylabel("height $y$")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+
+    # Run the free fall example
+    free_fall_example()
+
+
     return
 
 
