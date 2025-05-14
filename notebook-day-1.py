@@ -218,7 +218,7 @@ def _():
     g = 1 
     M = 1 
     l = 1 
-    return
+    return M, l
 
 
 @app.cell(hide_code=True)
@@ -279,11 +279,109 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    ## ⭐ Answer
+
+    ### Newton's Second Law
+
+    *The reactor force:* $(f_x, f_y)$  
+    *Gravity:* $(0, -Mg)$
+
+    *Equations of Motion:*
+
+    $$
+    M\ddot{x} = f_x
+    $$
+
+    $$
+    M\ddot{y} = f_y - Mg
+    $$
+
+    *Substituting the force components:*
+
+    $$
+    M\ddot{x} = -f \sin(\theta + \phi)
+    $$
+
+    $$
+    M\ddot{y} = f \cos(\theta + \phi) - Mg
+    $$
+
+    $$
+    \ddot{x} = -\frac{f}{M} \sin(\theta + \phi)
+    $$
+
+    $$
+    \ddot{y} = \frac{f}{M} \cos(\theta + \phi) - g
+    $$
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
     ## 🧩 Moment of inertia
 
     Compute the moment of inertia $J$ of the booster and define the corresponding Python variable `J`.
     """
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ## ⭐ Answer
+
+    ### Calculation of the Booster's Moment of Inertia
+
+    The moment of inertia \( J \) of an object with respect to a rotation axis can be calculated based on its mass and the distribution of that mass around the axis.
+
+    In this case, the booster is a *rigid tube with length \( 2\ell \)* and *uniformly distributed mass*, meaning the mass is evenly spread along its length.
+
+    We will calculate the moment of inertia with respect to the axis passing through the center of mass of the booster, then use the axis perpendicular to its length to describe the rotation.
+
+    #### Formula for the Moment of Inertia of a Rigid Tube
+
+    The moment of inertia of a *rigid tube of length \( L \) and mass \( M \)* with respect to an axis perpendicular to its length and passing through its center of mass is given by:
+
+    \[
+    J = \frac{1}{12} M L^2
+    \]
+
+    In our case, the length of the booster is \( 2\ell \), and its mass is \( M = 1 \, \text{kg} \). Therefore, the formula becomes:
+
+    \[
+    J = \frac{1}{12} M (2\ell)^2 = \frac{1}{12} M \cdot 4\ell^2 = \frac{1}{3} M \ell^2
+    \]
+
+    #### Numerical Values:
+
+    - \( M = 1 \, \text{kg} \) (mass of the booster),
+    - \( \ell = 1 \, \text{m} \) (half the length of the booster).
+
+    Thus:
+
+    \[
+    J = \frac{1}{3} \times 1 \, \text{kg} \times (1 \, \text{m})^2 = \frac{1}{3} \, \text{kg} \cdot \text{m}^2
+    \]
+    """
+    )
+    return
+
+
+@app.cell
+def _(M, l):
+    J = (1/3)*M*l
+    return (J,)
+
+
+@app.cell
+def _(J):
+    J
     return
 
 
