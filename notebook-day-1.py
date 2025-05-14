@@ -511,26 +511,83 @@ def _(M, g, l, np):
         def dynamics(t, y):
             # Unpack state
             x, dx, y, dy, theta, dtheta = y
-        
+
             # Get control inputs
             f, phi = f_phi(t, y)
-        
+
             # Compute derivatives
             ddx = -f/M * np.sin(theta + phi)
             ddy = f/M * np.cos(theta + phi) - g
             ddtheta = -(3*f/(M*l)) * np.sin(phi+theta)
-        
+
             return [dx, ddx, dy, ddy, dtheta, ddtheta]
-    
+
         # Solve the ODE
         sol = solve_ivp(dynamics, t_span, y0, t_eval=np.linspace(t_span[0], t_span[1], 1000),
                         method='RK45', dense_output=True)
-    
+
         # Return an interpolating function
         def solution(t):
             return sol.sol(t)
-    
+
         return solution
+    return (redstart_solve,)
+
+
+@app.cell
+def _(l, np, plt, redstart_solve):
+
+
+    # Free fall test
+    def free_fall_example():
+        t_span = [0.0, 5.0]
+        y0 = [0.0, 0.0, 10.0, 0.0, 0.0, 0.0]  # [x, dx, y, dy, theta, dtheta]
+    
+        def f_phi(t, y):
+            return np.array([0.0, 0.0])  # No input force or tilt
+    
+        sol = redstart_solve(t_span, y0, f_phi)
+    
+        # Time points
+        t = np.linspace(t_span[0], t_span[1], 1000)
+    
+        # Extract state components
+        x_t, _, y_t, _, theta_t, _ = sol(t)
+    
+        # Create the side-by-side plots
+        fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    
+        # x(t) plot
+        axes[0].plot(t, x_t, color="blue", label=r"$x(t)$ (horizontal position)")
+        axes[0].set_title("Horizontal Position $x(t)$")
+        axes[0].set_xlabel("time $t$")
+        axes[0].set_ylabel("Position $x$")
+        axes[0].grid(True)
+        axes[0].legend()
+
+        # y(t) plot
+        axes[1].plot(t, y_t, color="green", label=r"$y(t)$ (vertical position)")
+        axes[1].axhline(l, color="grey", ls="--", label=r"$y=\ell$")
+        axes[1].set_title("Vertical Position $y(t)$")
+        axes[1].set_xlabel("time $t$")
+        axes[1].set_ylabel("Position $y$")
+        axes[1].grid(True)
+        axes[1].legend()
+
+        # θ(t) plot
+        axes[2].plot(t, theta_t, color="red", label=r"$\theta(t)$ (tilt angle)")
+        axes[2].set_title("Tilt Angle $\\theta(t)$")
+        axes[2].set_xlabel("time $t$")
+        axes[2].set_ylabel("Angle $\\theta$")
+        axes[2].grid(True)
+        axes[2].legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    # Run the free fall example
+    free_fall_example()
+
     return
 
 
@@ -545,6 +602,113 @@ def _(mo):
     Simulate the corresponding scenario to check that your solution works as expected.
     """
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ## ⭐ Answer
+
+    We want to find a time-varying force \( f(t) \) (with \( \phi = 0 \)) that brings the system from \( y(0) = 10 \) to \( y(5) = \ell \) with zero final velocity. Since \( \theta = 0 \), the vertical motion simplifies to:
+
+    \[
+    \ddot{y}(t) = \frac{f(t)}{M} - g
+    \Rightarrow f(t) = M(\ddot{y}(t) + g)
+    \]
+
+    We choose a cubic polynomial for \( y(t) \) satisfying the boundary conditions:
+
+    \[
+    y(0) = 10,\quad \dot{y}(0) = 0,\quad y(5) = \ell,\quad \dot{y}(5) = 0
+    \]
+
+    Solving for the coefficients gives:
+
+    \[
+    y(t) = a t^3 + b t^2 + 10
+    \quad \text{with} \quad
+    a = \frac{10 - \ell}{62.5},\quad
+    b = \frac{7.5(\ell - 10)}{62.5}
+    \]
+
+    Then:
+
+    \[
+    \ddot{y}(t) = 6a t + 2b,\quad
+    f(t) = M (6a t + 2b + g)
+    \]
+
+    We simulate the system using redstart_solve with this \( f(t) \) and check that the final position and velocity match the target.
+    """
+    )
+    return
+
+
+@app.cell
+def _(M, g, l, np, plt, redstart_solve):
+
+
+    def cubic_trajectory_force_example():
+        # Time span and initial conditions
+        t0, tf = 0.0, 5.0
+        t_span = [t0, tf]
+        y_init = 10.0
+        v_init = 0.0
+        y0 = [0.0, 0.0, y_init, v_init, 0.0, 0.0]  # [x, dx, y, dy, theta, dtheta]
+
+        # Define the cubic trajectory for vertical control
+        a = (10 - l) / 62.5
+        b = 7.5 * (l - 10) / 62.5
+
+        def f_phi(t, y):
+            # Desired vertical acceleration
+            dd_y = 6 * a * t + 2 * b
+            f = M * (dd_y + g)
+            return np.array([f, 0.0])  # Force with no tilt
+
+        # Solve the ODE
+        sol = redstart_solve(t_span, y0, f_phi)
+
+        # Generate time points for evaluation
+        t = np.linspace(t0, tf, 1000)
+        x_t, _, y_t, _, theta_t, _ = sol(t)
+
+        # Create side-by-side plots
+        fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+        # x(t) plot
+        axes[0].plot(t, x_t, label=r"$x(t)$ (horizontal position)", color="blue")
+        axes[0].set_title("Horizontal Position $x(t)$")
+        axes[0].set_xlabel("time $t$")
+        axes[0].set_ylabel("Position $x$")
+        axes[0].grid(True)
+        axes[0].legend()
+
+        # y(t) plot
+        axes[1].plot(t, y_t, label=r"$y(t)$ (vertical position)", color="green")
+        axes[1].axhline(l, color="grey", ls="--", label=r"$y = \ell$")
+        axes[1].set_title("Vertical Position $y(t)$")
+        axes[1].set_xlabel("time $t$")
+        axes[1].set_ylabel("Position $y$")
+        axes[1].grid(True)
+        axes[1].legend()
+
+        # θ(t) plot
+        axes[2].plot(t, theta_t, label=r"$\theta(t)$ (tilt angle)", color="red")
+        axes[2].set_title("Tilt Angle $\\theta(t)$")
+        axes[2].set_xlabel("time $t$")
+        axes[2].set_ylabel("Angle $\\theta$")
+        axes[2].grid(True)
+        axes[2].legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    # Run the cubic trajectory example
+    cubic_trajectory_force_example()
+
     return
 
 
