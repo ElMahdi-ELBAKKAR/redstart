@@ -502,69 +502,35 @@ def _(mo):
 
 
 @app.cell
-def _(M, g, l, np, plt):
+def _(M, g, l, np):
 
 
     from scipy.integrate import solve_ivp
 
-    # Define the main solver function
     def redstart_solve(t_span, y0, f_phi):
-  
-
-        # Moment of inertia for a uniform rod
-        J = (1 / 3) * M * (l**2)
-
-        # Define the ODE system
-        def booster_dynamics(t, y):
-            # Unpack the state vector
-            x, dx, y_pos, dy, theta, dtheta = y
+        def dynamics(t, y):
+            # Unpack state
+            x, dx, y, dy, theta, dtheta = y
         
-            # Get the current force and angle
+            # Get control inputs
             f, phi = f_phi(t, y)
-
-            # Translational acceleration (fx, fy)
-            fx = -f * np.sin(theta + phi)
-            fy = f * np.cos(theta + phi) - M * g
-
-            # Rotational acceleration (d2theta)
-            d2theta = - (3 * f * np.sin(theta + phi)) / (M * l)
-
-            # Return the full state derivative
-            return [dx, fx / M, dy, fy / M, dtheta, d2theta]
-
+        
+            # Compute derivatives
+            ddx = -f/M * np.sin(theta + phi)
+            ddy = f/M * np.cos(theta + phi) - g
+            ddtheta = -(3*f/(M*l)) * np.sin(phi+theta)
+        
+            return [dx, ddx, dy, ddy, dtheta, ddtheta]
+    
         # Solve the ODE
-        sol = solve_ivp(booster_dynamics, t_span, y0, dense_output=True)
-
-        # Return the interpolation function
-        return sol.sol
-
-    # Test case: Free Fall Example
-    def free_fall_example():
-        t_span = [0.0, 5.0]
-        y0 = [0.0, 0.0, 10.0, 0.0, 0.0, 0.0]  # [x, dx, y, dy, theta, dtheta]
+        sol = solve_ivp(dynamics, t_span, y0, t_eval=np.linspace(t_span[0], t_span[1], 1000),
+                        method='RK45', dense_output=True)
     
-        def f_phi(t, y):
-            return np.array([0.0, 0.0])  # No input force or tilt
+        # Return an interpolating function
+        def solution(t):
+            return sol.sol(t)
     
-        sol = redstart_solve(t_span, y0, f_phi)
-    
-        # Plot the y position over time
-        t = np.linspace(t_span[0], t_span[1], 1000)
-        y_t = sol(t)[2]
-    
-        plt.plot(t, y_t, label=r"$y(t)$ (height in meters)")
-        plt.plot(t, l * np.ones_like(t), color="grey", ls="--", label=r"$y=\ell$")
-        plt.title("Free Fall")
-        plt.xlabel("time $t$")
-        plt.ylabel("height $y$")
-        plt.grid(True)
-        plt.legend()
-        plt.show()
-
-    # Run the free fall example
-    free_fall_example()
-
-
+        return solution
     return
 
 
