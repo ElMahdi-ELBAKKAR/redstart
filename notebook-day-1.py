@@ -401,6 +401,79 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    ## ⭐ Answer
+
+    ### Rotational Dynamics of the Booster
+
+
+
+    The total torque \(\tau\) acting on the booster is the sum of the torques produced by the reactor force and gravity:
+
+    \[
+    \tau = \ell \cdot f \sin(\phi) - M g \ell \sin(\theta)
+    \]
+
+ 
+
+    ### Rotational Dynamics Equation
+
+    Using **Newton's second law for rotation**, the rotational equation can be written as:
+
+    \[
+    J \frac{d^2 \theta}{dt^2} = \tau
+    \]
+
+    Substituting the total torque:
+
+    \[
+    J \frac{d^2 \theta}{dt^2} = \ell \cdot f \sin(\phi) - M g \ell \sin(\theta)
+    \]
+
+    ## Substituting the Moment of Inertia
+
+    Since the booster is modeled as a rigid tube of length \(2\ell\), its moment of inertia about the center of mass is:
+
+    \[
+    J = \frac{1}{3} M \ell^2
+    \]
+
+    Substituting \(J\) into the rotational equation:
+
+    \[
+    \frac{1}{3} M \ell^2 \frac{d^2 \theta}{dt^2} = \ell \cdot f \sin(\phi) - M g \ell \sin(\theta)
+    \]
+
+    ## Simplifying the Equation
+
+    Canceling out common terms (\(\ell\)):
+
+    \[
+    \frac{1}{3} M \ell \frac{d^2 \theta}{dt^2} = f \sin(\phi) - M g \sin(\theta)
+    \]
+
+    Multiply both sides by \(\frac{3}{M \ell}\):
+
+    \[
+    \frac{d^2 \theta}{dt^2} = \frac{3}{M \ell} \left[ f \sin(\phi) - M g \sin(\theta) \right]
+    \]
+
+    Therefore, the equation governing the tilt angle \(\theta\) of the booster becomes:
+
+    \[
+    \frac{d^2 \theta}{dt^2} = \frac{3 f \sin(\phi)}{M \ell} - 3 g \sin(\theta) / \ell
+    \]
+
+
+
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
     ## 🧩 Simulation
 
     Define a function `redstart_solve` that, given as input parameters: 
