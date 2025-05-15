@@ -1726,9 +1726,9 @@ def _(Ar, Br, np, plt, solve_ivp):
     # Initial state: only theta = pi/4
     X0 = np.array([0, 0, np.pi/4, 0])
 
-    # Try several k3 and k4 values manually
-    k3 = 10
-    k4 = 6
+
+    k3 = -2
+    k4 = -1
     K = np.array([0, 0, k3, k4])  # only control θ and θ̇
 
     # Closed-loop dynamics: Ẋ = (A - B K) X
