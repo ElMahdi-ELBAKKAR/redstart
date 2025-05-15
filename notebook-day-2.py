@@ -1219,8 +1219,10 @@ def _(mo):
     return
 
 
-app._unparsable_cell(
-    r"""
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     To determine whether the generic equilibrium is asymptotically stable, we analyze the eigenvalues of the linearized system matrix \( A \) around that equilibrium.
@@ -1231,14 +1233,10 @@ app._unparsable_cell(
     \text{Eig}(A) = \{0, 0, 0, 0, 0, 0\}
     \]
 
-    This means that all eigenvalues have zero real parts. Therefore:
-
-    - The system is not asymptotically stable (since no eigenvalue has a negative real part),
-    - It is also not unstable (since no eigenvalue has a positive real part),
-    - The equilibrium is classified as *marginally stable*.
-    """,
-    column=None, disabled=False, hide_code=True, name="_"
-)
+    This means that all eigenvalues are exactly zero. Therefore the system is not asymptotically stable.
+    """
+    )
+    return
 
 
 @app.cell
@@ -1509,46 +1507,64 @@ def _(mo):
 
 
 @app.cell
-def _(A, np, plt):
+def _(mo):
+    mo.md(
+        r"""
+    ## ⭐ Answer
+
+    ### Observations from the Plot
+
+    1. **Uncontrolled Descent:**
+       - The \(y(t)\) (blue curve) decreases rapidly over time, indicating a free fall.
+       - This is expected since without a compensating vertical force, gravity dominates the vertical motion.
+
+    2. **Tilt Behavior:**
+       - The \( \theta(t) \) (red curve) remains constant due to the null nature of its derivatives. 
+
+    """
+    )
+    return
+
+
+@app.cell
+def _(g, np, plt):
     from scipy.integrate import solve_ivp
 
-    theta0 = (45 / 180) * np.pi
-    x0 = np.array([0, 0, theta0, 0, 0, 0])
+    # Initial conditions
+    theta0 = np.pi / 4   
+    theta_dot0 = 0       
+    y0 = 0               
+    y_dot0 = 0           
 
-    t_span = (0, 5)  # from 0 to 5 seconds
-    t_eval = np.linspace(*t_span, 500)
+    def linear_model(t, state):
+        y, y_dot, theta, theta_dot = state
+        return [
+            y_dot,         # y'
+            -g,            # y'' = -g
+            theta_dot,     # θ'
+            0              # θ'' = 0, since ϕ = 0
+        ]
 
-    def linear_ode(t, x):
-        return A @ x 
+    initial_state = [y0, y_dot0, theta0, theta_dot0]
 
-    sol = solve_ivp(linear_ode, t_span, x0, t_eval=t_eval)
+    t_vals = np.linspace(0, 5, 500)
 
-    y_t = sol.y[0]
-    theta_t = sol.y[2]
+    sol = solve_ivp(linear_model, [0, 5], initial_state, t_eval=t_vals)
 
-    plt.figure(figsize=(12, 5))
+    y_vals = sol.y[0]
+    theta_vals = sol.y[2]
 
-    # y(t)
-    plt.subplot(1, 2, 1)
-    plt.plot(sol.t, y_t, label='y(t)')
-    plt.title("y(t) vs Time")
-    plt.xlabel("Time [s]")
-    plt.ylabel("y(t) [m]")
+    plt.figure(figsize=(10, 5))
+    plt.plot(t_vals, y_vals, label="y(t)", color='blue')
+    plt.plot(t_vals, theta_vals, label=r"$\theta(t)$", color='red')
+    plt.xlabel("Time (s)")
+    plt.ylabel("Values")
+    plt.title("y(t) and θ(t) for the Linearized Model")
     plt.grid(True)
     plt.legend()
-
-    # theta(t)
-    plt.subplot(1, 2, 2)
-    plt.plot(sol.t, theta_t, label='θ(t)', color='orange')
-    plt.title("θ(t) vs Time")
-    plt.xlabel("Time [s]")
-    plt.ylabel("θ(t) [rad]")
-    plt.grid(True)
-    plt.legend()
-
     plt.tight_layout()
     plt.show()
-    return solve_ivp, t_span
+    return (solve_ivp,)
 
 
 @app.cell(hide_code=True)
@@ -1601,66 +1617,113 @@ def _(mo):
     mo.md(r"""
     ## ⭐ Answer
 
-    We consider the reduced system:
+    Nous cherchons à compléter le vecteur de gain :
 
     \[
-    \dot{\Delta X_r} = A_r \Delta X_r + B_r \Delta \phi
+    K = [0,\ 0,\ k_3,\ k_4]
     \]
 
-    with state:
+    dans la loi de commande :
 
     \[
-    \Delta X_r = 
-    \begin{bmatrix}
-    \Delta x \\
-    \Delta \dot{x} \\
-    \Delta \theta \\
-    \Delta \dot{\theta}
-    \end{bmatrix}
-    \quad \text{and control law:} \quad
     \Delta \phi(t) = -k_3 \Delta \theta(t) - k_4 \Delta \dot{\theta}(t)
     \]
 
-    We set \( K = [0, 0, k_3, k_4] \) and want to find suitable values such that:
+    avec les objectifs suivants :
 
-    - \( \Delta \theta(t) \to 0 \) in ≤ 20 sec
-    - \( |\Delta \theta(t)| < \pi/2 \)
-    - \( |\Delta \phi(t)| < \pi/2 \)
-    - Drift in \( \Delta x(t) \) is allowed
+    - \( \Delta \theta(t) \to 0 \) en 20 secondes ou moins
+    - \( |\Delta \theta(t)| < \frac{\pi}{2} \)
+    - \( |\Delta \phi(t)| < \frac{\pi}{2} \)
+    - Pas de contrainte sur \( \Delta x(t) \)
 
-    Initial condition:
+    Les conditions initiales sont :
 
     \[
-    \Delta X_r(0) =
-    \begin{bmatrix}
+    \Delta x(0) = 0, \quad \Delta \dot{x}(0) = 0, \quad \Delta \theta(0) = \frac{\pi}{4}, \quad \Delta \dot{\theta}(0) = 0
+    \]
+
+    Nous utilisons le système réduit suivant :
+
+    \[
+    \dot{X}_r = A_r X_r + B_r \Delta \phi
+    \]
+
+    où :
+
+    \[
+    X_r = \begin{bmatrix} \Delta x \\ \Delta \dot{x} \\ \Delta \theta \\ \Delta \dot{\theta} \end{bmatrix}, \quad
+    A_r = \begin{bmatrix}
+    0 & 1 & 0 & 0 \\
+    0 & 0 & -1 & 0 \\
+    0 & 0 & 0 & 1 \\
+    0 & 0 & 0 & 0
+    \end{bmatrix}, \quad
+    B_r = \begin{bmatrix}
     0 \\
+    -1 \\
     0 \\
-    \frac{\pi}{4} \\
-    0
+    -3
     \end{bmatrix}
     \]
 
-    ## Final Answer
-
-    We selected:
+    On choisit : 
 
     \[
-    K = [0, 0, \boxed{10}, \boxed{6}]
+    K = [0,\ 0,\ 10,\ 6]
     \]
 
-    This gives:
+    et on construit :
 
-    - A closed-loop system that stabilizes \( \Delta \theta(t) \to 0 \) in ~10 seconds
-    - Control input \( \Delta \phi(t) \) and tilt \( \Delta \theta(t) \) remain within \( (-\pi/2, \pi/2) \)
-    - The closed-loop system is *asymptotically stable*
+    \[
+    A_{\text{cl}} = A_r - B_r K
+    \]
 
-    🟢 All requirements are satisfied!
+    ---
+
+    Les valeurs propres du système en boucle fermée sont :
+
+    - Une valeur propre *positive*
+    - Une valeur propre *nulle*
+    - Deux valeurs propres complexes à *partie réelle négative*
+
+    Cela signifie que :
+
+    - Le système *n’est pas asymptotiquement stable*
+    - Une partie de la dynamique diverge
+    - Même si \( \theta(t) \) semble converger au début, le système global *peut diverger à long terme*
+
+    ---
+
+
+    Le retour d’état choisi *ne contrôle pas les états* \( \Delta x \) et \( \Delta \dot{x} \), or :
+
+    \[
+    \Delta \ddot{x} = -g(\Delta \theta + \Delta \phi)
+    \]
+
+    donc des variations de \( \theta \) ont un impact direct sur la dynamique de \( x \), qui *reste non contrôlée, ce qui crée une **instabilité globale*.
+
+    ### Conclusion
+
+    Avec :
+
+    \[
+    K = [0,\ 0,\ 10,\ 6]
+    \]
+
+    le système n’est *pas stabilisé* :
+
+    - Il contient des *pôles non stables*
+    - Les trajectoires peuvent *diverger*
+    - Le critère \( \Delta \theta(t) \to 0 \) *n’est pas satisfait durablement*
+
+
     """)
     return
 
 
 @app.cell
-def _(Ar, Br, np, plt, solve_ivp, t_span):
+def _(Ar, Br, np, plt, solve_ivp):
     # Initial state: only theta = pi/4
     X0 = np.array([0, 0, np.pi/4, 0])
 
@@ -1674,7 +1737,7 @@ def _(Ar, Br, np, plt, solve_ivp, t_span):
 
     # Time vector
     t_span1 = [0, 20]
-    t_eval1 = np.linspace(t_span[0], t_span[1], 1000)
+    t_eval1 = np.linspace(t_span1[0], t_span1[1], 1000)
 
     # Solve ODE
     sol1 = solve_ivp(lambda t, x: A_cl @ x, t_span1, X0)
@@ -1757,6 +1820,73 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    ## ⭐ Answer
+
+
+    We design a full-state feedback controller:
+
+    \[
+    \Delta \phi(t) = -K_{pp} \cdot 
+    \begin{bmatrix}
+    \Delta x(t) \\
+    \Delta \dot{x}(t) \\
+    \Delta \theta(t) \\
+    \Delta \dot{\theta}(t)
+    \end{bmatrix}
+    \]
+
+    with:
+
+    \[
+    K_{pp} = [k_1, k_2, k_3, k_4]
+    \]
+
+
+    We want the closed-loop system to:
+
+    - Be *asymptotically stable*
+
+    - Bring \( \Delta x(t) \to 0 \) and \( \Delta \theta(t) \to 0 \)
+
+    - Converge in *about 20 seconds* → dominant poles with real part ≈ -0.2 or faster
+
+    - Use *pole placement* to assign eigenvalues of \( A_{cl} = A - B K \)
+
+    ## Final Answer: Pole Placement Controller
+
+    We chose the poles:
+
+    \[
+    \text{{poles}} = [-0.3, -0.4, -0.5, -0.6]
+    \]
+
+    The resulting gain is:
+
+    \[
+    K_{{pp}} = \begin{bmatrix}
+    \boxed{{{K_pp[0]:.2f}}} &
+    \boxed{{{K_pp[1]:.2f}}} &
+    \boxed{{{K_pp[2]:.2f}}} &
+    \boxed{{{K_pp[3]:.2f}}}
+    \end{bmatrix}
+    \]
+
+     The closed-loop dynamics are:
+
+    - *Asymptotically stable* (eigenvalues in left half-plane)
+
+    - *All states converge to 0*, including \( \Delta x(t) \)
+
+    - *Constraints* \( |\Delta \theta(t)| < \pi/2 \), \( |\Delta \phi(t)| < \pi/2 \) are respected
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
     ## 🧩 Controller Tuned with Optimal Control
 
     Using optimal, find a gain matrix $K_{oc}$ that satisfies the same set of requirements that the one defined using pole placement.
@@ -1771,11 +1901,147 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    ## ⭐ Answer
+
+    We want to find an *optimal gain*:
+
+    \[
+    K_{oc} \in \mathbb{R}^{1 \times 4}
+    \]
+
+    using the *Linear Quadratic Regulator (LQR)* method, which minimizes the cost function:
+
+    \[
+    J = \int_0^\infty \left( X^\top Q X + u^\top R u \right) dt
+    \]
+
+    ---
+
+    ## Design Insight:
+
+    - Matrix \( Q \) penalizes state errors (e.g. position, tilt)
+    - Matrix \( R \) penalizes control effort \( \Delta \phi \)
+    - To achieve convergence in ~20 sec:
+      - Set *moderate weights* on \( \Delta x, \Delta \theta \)
+      - Keep \( R \) small enough so that control is responsive but bounded
+
+
+    ## Final Answer: LQR Optimal Controller
+
+    We chose:
+
+    - \( Q = \text{{diag}}(5, 0.1, 20, 1) \): prioritizes reducing lateral position and tilt
+    - \( R = 0.05 \): balances control effort
+    - Initial tilt: \( \Delta \theta(0) = \frac{{\pi}}{{4}} \)
+
+    The resulting gain is:
+
+    \[
+    K_{{oc}} = \begin{bmatrix}
+    \boxed{{{K_oc[0]:.2f}}} &
+    \boxed{{{K_oc[1]:.2f}}} &
+    \boxed{{{K_oc[2]:.2f}}} &
+    \boxed{{{K_oc[3]:.2f}}}
+    \end{bmatrix}
+    \]
+
+    Performance:
+
+    - Closed-loop system is *asymptotically stable*
+    - \( \Delta x(t), \Delta \theta(t) \to 0 \) in ~10–15 sec
+    - \( |\Delta \theta(t)| < \frac{\pi}{2} \), \( |\Delta \phi(t)| < \frac{\pi}{2} \)
+
+    All design requirements satisfied using optimal LQR control!
+    """
+    )
+    return
+
+
+@app.cell
+def _():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.integrate import solve_ivp
+    from scipy.linalg import solve_continuous_are
+
+    # System
+    g = 1.0
+    a = 3.0
+    A = np.array([
+        [0, 1, 0, 0],
+        [0, 0, -g, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0]
+    ])
+    B = np.array([
+        [0],
+        [-g],
+        [0],
+        [-a]
+    ])
+
+    # Cost matrices
+    Q = np.diag([5, 0.1, 20, 1])  # Penalize x and θ more
+    R = np.array([[0.05]])        # Moderate control effort penalty
+
+    # Solve Continuous Algebraic Riccati Equation
+    P = solve_continuous_are(A, B, Q, R)
+    K_oc = np.linalg.inv(R) @ B.T @ P
+    K_oc = K_oc.flatten()
+
+    print("LQR gain K_oc =", K_oc)
+
+    # Closed-loop dynamics
+    A_cl = A - B @ K_oc.reshape(1, -1)
+    X0 = np.array([0, 0, np.pi/4, 0])
+    t_span = [0, 20]
+    t_eval = np.linspace(t_span[0], t_span[1], 1000)
+    sol = solve_ivp(lambda t, x: A_cl @ x, t_span, X0, t_eval=t_eval)
+
+    x_t = sol.y
+    t = sol.t
+    phi_t = -K_oc @ x_t
+
+    # Plotting
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(t, x_t[0], label=r"$\Delta x(t)$")
+    plt.plot(t, x_t[2], label=r"$\Delta \theta(t)$")
+    plt.axhline(np.pi/2, color='red', linestyle='--', label=r"$\pm \pi/2$")
+    plt.axhline(-np.pi/2, color='red', linestyle='--')
+    plt.xlabel("Time [s]")
+    plt.grid(True)
+    plt.title("State Evolution")
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(t, phi_t, label=r"$\Delta \phi(t)$")
+    plt.axhline(np.pi/2, color='red', linestyle='--')
+    plt.axhline(-np.pi/2, color='red', linestyle='--')
+    plt.xlabel("Time [s]")
+    plt.title("Control Input")
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+    return A, B, R, a, g, np, plt, solve_ivp
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
     ## 🧩 Validation
 
     Test the two control strategies (pole placement and optimal control) on the "true" (nonlinear) model and check that they achieve their goal. Otherwise, go back to the drawing board and tweak the design parameters until they do!
     """
     )
+    return
+
+
+@app.cell
+def _():
     return
 
 
