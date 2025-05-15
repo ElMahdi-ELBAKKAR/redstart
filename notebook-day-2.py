@@ -1519,8 +1519,7 @@ def _(mo):
        - This is expected since without a compensating vertical force, gravity dominates the vertical motion.
 
     2. **Tilt Behavior:**
-       - The \( \theta(t) \) (red curve) remains constant due to the null nature of its derivatives. 
-
+       - The \( \theta(t) \) (red curve) remains constant due to the null nature of its derivatives.
     """
     )
     return
@@ -1614,7 +1613,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     Nous cherchons à compléter le vecteur de gain :
@@ -1716,9 +1716,8 @@ def _(mo):
     - Il contient des *pôles non stables*
     - Les trajectoires peuvent *diverger*
     - Le critère \( \Delta \theta(t) \to 0 \) *n’est pas satisfait durablement*
-
-
-    """)
+    """
+    )
     return
 
 
@@ -1769,6 +1768,38 @@ def _(Ar, Br, np, plt, solve_ivp):
     plt.grid(True)
     plt.legend()
 
+    plt.tight_layout()
+    plt.show()
+    return
+
+
+app._unparsable_cell(
+    r"""
+    To solve:  
+    \(\ddot{x} = - \frac{g \sqrt{2}}{2}\)
+
+    We integrate twice while respecting: \(x(0) = 0\), \(\dot{x}(0) = 0\).
+
+    \(\dot{x}(t) = - \frac{g \sqrt{2}}{2} t\)
+
+    \(x(t) = - \frac{g \sqrt{2}}{4} t^{2}\)
+    """,
+    name="_"
+)
+
+
+@app.cell
+def _(g, np, plt):
+    t7 = np.linspace(0, 5, 500)
+    x = - (g * np.sqrt(2) / 4) * t7**2
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(t7, x, label=r"$x(t) = -\frac{g\sqrt{2}}{4} t^2$", color="purple")
+    plt.xlabel("Temps (s)")
+    plt.ylabel("x(t) [m]")
+    plt.title("Trajectoire x(t) sous l'effet de la gravité")
+    plt.grid(True)
+    plt.legend()
     plt.tight_layout()
     plt.show()
     return
@@ -1864,10 +1895,10 @@ def _(mo):
 
     \[
     K_{{pp}} = \begin{bmatrix}
-    \boxed{{{K_pp[0]:.2f}}} &
-    \boxed{{{K_pp[1]:.2f}}} &
-    \boxed{{{K_pp[2]:.2f}}} &
-    \boxed{{{K_pp[3]:.2f}}}
+    \boxed{{{K_{pp[0]}:.2f}}} &
+    \boxed{{{K_{pp[1]}:.2f}}} &
+    \boxed{{{K_{pp[2]}:.2f}}} &
+    \boxed{{{K_{pp[3]}:.2f}}}
     \end{bmatrix}
     \]
 
@@ -1880,6 +1911,77 @@ def _(mo):
     - *Constraints* \( |\Delta \theta(t)| < \pi/2 \), \( |\Delta \phi(t)| < \pi/2 \) are respected
     """
     )
+    return
+
+
+@app.cell
+def _(a, g, np, plt, solve_ivp):
+
+    from scipy.signal import place_poles
+
+
+
+    A9 = np.array([
+        [0, 1, 0, 0],
+        [0, 0, -g, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0]
+    ])
+
+    B9 = np.array([
+        [0],
+        [-g],
+        [0],
+        [-a]
+    ])
+
+    # Desired pole locations (all negative real parts, stable, moderately fast)
+    # Convergence in ~20 sec → real parts around -0.2 to -0.4
+    desired_poles = np.array([-0.3, -0.4, -0.5, -0.6])
+
+    # Use scipy's pole placement
+    controller = place_poles(A9, B9, desired_poles)
+    K_pp = controller.gain_matrix.flatten()
+
+    print("Pole placement gain K_pp =", K_pp)
+
+    # Closed-loop system
+    A_cl9 = A9 - B9 @ K_pp.reshape(1, -1)
+
+    # Initial state: theta = pi/4
+    X09 = np.array([0, 0, np.pi/4, 0])
+    t_span = [0, 20]
+    t_eval = np.linspace(t_span[0], t_span[1], 1000)
+    sol9 = solve_ivp(lambda t, x: A_cl9 @ x, t_span, X09)
+
+    # Output
+    x_t9 = sol9.y
+    t9 = sol9.t
+    phi_t9 = -K_pp @ x_t9
+
+    # Plot
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(t9, x_t9[0], label=r"$\Delta x(t)$")
+    plt.plot(t9, x_t9[2], label=r"$\Delta \theta(t)$")
+    plt.axhline(np.pi/2, color='red', linestyle='--', label=r"$\pm \pi/2$")
+    plt.axhline(-np.pi/2, color='red', linestyle='--')
+    plt.xlabel("Time [s]")
+    plt.grid(True)
+    plt.title("State Evolution")
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(t9, phi_t9, label=r"$\Delta \phi(t)$")
+    plt.axhline(np.pi/2, color='red', linestyle='--', label=r"$\pm \pi/2$")
+    plt.axhline(-np.pi/2, color='red', linestyle='--')
+    plt.xlabel("Time [s]")
+    plt.title("Control Input")
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
     return
 
 
@@ -1958,15 +2060,13 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(a, g):
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.integrate import solve_ivp
     from scipy.linalg import solve_continuous_are
 
-    # System
-    g = 1.0
-    a = 3.0
+
     A = np.array([
         [0, 1, 0, 0],
         [0, 0, -g, 0],
@@ -2025,7 +2125,7 @@ def _():
 
     plt.tight_layout()
     plt.show()
-    return A, B, R, a, g, np, plt, solve_ivp
+    return A, B, R, np, plt, solve_ivp
 
 
 @app.cell(hide_code=True)
