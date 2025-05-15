@@ -951,7 +951,6 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-
     ## 🧩 Equilibria
 
     We assume that $|\theta| < \pi/2$, $|\phi| < \pi/2$ and that $f > 0$. What are the possible equilibria of the system for constant inputs $f$ and $\phi$ and what are the corresponding values of these inputs?
@@ -962,11 +961,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-
-
-
-    mo.md(r"""
-
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     We assume the system is at *equilibrium*, which means:
@@ -1027,7 +1023,8 @@ def _(mo):
 
     - \( \boxed{\phi = 0} \) (thrust aligned)
     - \( \boxed{f = Mg} \) (force cancels gravity)
-    """)
+    """
+    )
     return
 
 
@@ -1041,6 +1038,37 @@ def _(mo):
     What are the linear ordinary differential equations that govern (approximately) these variables in a neighbourhood of the equilibrium?
     """
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+
+    ## ⭐ Answer
+
+    Using the Taylor expansions of the dynamics near equilibrium, and assuming small \( \theta \) and \( \phi \):
+
+    \[
+    \begin{aligned}
+    \ddot{x} &= -\frac{f}{M} \sin(\theta + \phi) \approx -g (\Delta \theta + \Delta \phi) \\
+    \ddot{y} &= \frac{f}{M} \cos(\theta + \phi) - g \approx \frac{\Delta f}{M} \\
+    \ddot{\theta} &= -\frac{\ell f}{J} \sin(\phi) \approx -\frac{Mg \ell}{J} \Delta \phi
+    \end{aligned}
+    \]
+
+    So, the *linearized ODE system* is:
+
+    \[
+    \begin{aligned}
+    \Delta \ddot{x} &= -g (\Delta \theta + \Delta \phi) \\
+    \Delta \ddot{y} &= \frac{1}{M} \Delta f \\
+    \Delta \ddot{\theta} &= -\frac{Mg \ell}{J} \Delta \phi
+    \end{aligned}
+    \]
+
+    This gives the approximate evolution of the system in a small neighborhood of the equilibrium.
+    """)
     return
 
 
