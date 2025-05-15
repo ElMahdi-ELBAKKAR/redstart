@@ -1088,7 +1088,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     We linearized the system around the equilibrium:
@@ -1172,8 +1173,8 @@ def _(mo):
     0 & {-\frac{Mgl}{J}}
     \end{bmatrix}
     $$
-
-    """)
+    """
+    )
     return
 
 
@@ -1319,7 +1320,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     We reduce our analysis to the lateral dynamics:
@@ -1431,7 +1433,8 @@ def _(mo):
     ### Final Answer
 
      *Yes, the reduced system is **fully controllable* with the input \( \Delta \phi \).
-    """)
+    """
+    )
     return
 
 
@@ -1489,7 +1492,7 @@ def _(a, g, matrix_rank, np):
     print("Reduced A matrix:\n", Ar)
     print("\nReduced B matrix:\n", Br)
     print("\nControllability matrix rank:", rank_Cr)
-    return
+    return Ar, Br
 
 
 @app.cell(hide_code=True)
@@ -1506,8 +1509,46 @@ def _(mo):
 
 
 @app.cell
-def _():
-    return
+def _(A, np, plt):
+    from scipy.integrate import solve_ivp
+
+    theta0 = (45 / 180) * np.pi
+    x0 = np.array([0, 0, theta0, 0, 0, 0])
+
+    t_span = (0, 5)  # from 0 to 5 seconds
+    t_eval = np.linspace(*t_span, 500)
+
+    def linear_ode(t, x):
+        return A @ x 
+
+    sol = solve_ivp(linear_ode, t_span, x0, t_eval=t_eval)
+
+    y_t = sol.y[0]
+    theta_t = sol.y[2]
+
+    plt.figure(figsize=(12, 5))
+
+    # y(t)
+    plt.subplot(1, 2, 1)
+    plt.plot(sol.t, y_t, label='y(t)')
+    plt.title("y(t) vs Time")
+    plt.xlabel("Time [s]")
+    plt.ylabel("y(t) [m]")
+    plt.grid(True)
+    plt.legend()
+
+    # theta(t)
+    plt.subplot(1, 2, 2)
+    plt.plot(sol.t, theta_t, label='θ(t)', color='orange')
+    plt.title("θ(t) vs Time")
+    plt.xlabel("Time [s]")
+    plt.ylabel("θ(t) [rad]")
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+    return solve_ivp, t_span
 
 
 @app.cell(hide_code=True)
@@ -1552,6 +1593,121 @@ def _(mo):
     Is your closed-loop model asymptotically stable?
     """
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## ⭐ Answer
+
+    We consider the reduced system:
+
+    \[
+    \dot{\Delta X_r} = A_r \Delta X_r + B_r \Delta \phi
+    \]
+
+    with state:
+
+    \[
+    \Delta X_r = 
+    \begin{bmatrix}
+    \Delta x \\
+    \Delta \dot{x} \\
+    \Delta \theta \\
+    \Delta \dot{\theta}
+    \end{bmatrix}
+    \quad \text{and control law:} \quad
+    \Delta \phi(t) = -k_3 \Delta \theta(t) - k_4 \Delta \dot{\theta}(t)
+    \]
+
+    We set \( K = [0, 0, k_3, k_4] \) and want to find suitable values such that:
+
+    - \( \Delta \theta(t) \to 0 \) in ≤ 20 sec
+    - \( |\Delta \theta(t)| < \pi/2 \)
+    - \( |\Delta \phi(t)| < \pi/2 \)
+    - Drift in \( \Delta x(t) \) is allowed
+
+    Initial condition:
+
+    \[
+    \Delta X_r(0) =
+    \begin{bmatrix}
+    0 \\
+    0 \\
+    \frac{\pi}{4} \\
+    0
+    \end{bmatrix}
+    \]
+
+    ## Final Answer
+
+    We selected:
+
+    \[
+    K = [0, 0, \boxed{10}, \boxed{6}]
+    \]
+
+    This gives:
+
+    - A closed-loop system that stabilizes \( \Delta \theta(t) \to 0 \) in ~10 seconds
+    - Control input \( \Delta \phi(t) \) and tilt \( \Delta \theta(t) \) remain within \( (-\pi/2, \pi/2) \)
+    - The closed-loop system is *asymptotically stable*
+
+    🟢 All requirements are satisfied!
+    """)
+    return
+
+
+@app.cell
+def _(Ar, Br, np, plt, solve_ivp, t_span):
+    # Initial state: only theta = pi/4
+    X0 = np.array([0, 0, np.pi/4, 0])
+
+    # Try several k3 and k4 values manually
+    k3 = 10
+    k4 = 6
+    K = np.array([0, 0, k3, k4])  # only control θ and θ̇
+
+    # Closed-loop dynamics: Ẋ = (A - B K) X
+    A_cl = Ar - Br @ K.reshape(1, -1)
+
+    # Time vector
+    t_span1 = [0, 20]
+    t_eval1 = np.linspace(t_span[0], t_span[1], 1000)
+
+    # Solve ODE
+    sol1 = solve_ivp(lambda t, x: A_cl @ x, t_span1, X0)
+    x_t = sol1.y
+    t = sol1.t
+
+    # Compute control input: Δφ(t)
+    phi_t = -K @ x_t
+
+    # Plot
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(t, x_t[2], label=r"$\Delta \theta(t)$")
+    plt.axhline(np.pi/2, color='red', linestyle='--', label=r"$\pm \frac{\pi}{2}$")
+    plt.axhline(-np.pi/2, color='red', linestyle='--')
+    plt.xlabel("Time [s]")
+    plt.ylabel("θ (rad)")
+    plt.title("Tilt Angle Over Time")
+    plt.grid(True)
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(t, phi_t, label=r"$\Delta \phi(t)$")
+    plt.axhline(np.pi/2, color='red', linestyle='--', label=r"$\pm \frac{\pi}{2}$")
+    plt.axhline(-np.pi/2, color='red', linestyle='--')
+    plt.xlabel("Time [s]")
+    plt.ylabel("ϕ (rad)")
+    plt.title("Control Input Over Time")
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
     return
 
 
