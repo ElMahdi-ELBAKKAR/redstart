@@ -2060,20 +2060,18 @@ def _(mo):
 
 
 @app.cell
-def _(a, g):
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from scipy.integrate import solve_ivp
+def _(a, g, np, plt, solve_ivp):
+
     from scipy.linalg import solve_continuous_are
 
 
-    A = np.array([
+    A11 = np.array([
         [0, 1, 0, 0],
         [0, 0, -g, 0],
         [0, 0, 0, 1],
         [0, 0, 0, 0]
     ])
-    B = np.array([
+    B11 = np.array([
         [0],
         [-g],
         [0],
@@ -2081,32 +2079,32 @@ def _(a, g):
     ])
 
     # Cost matrices
-    Q = np.diag([5, 0.1, 20, 1])  # Penalize x and θ more
-    R = np.array([[0.05]])        # Moderate control effort penalty
+    Q11 = np.diag([5, 0.1, 20, 1])  # Penalize x and θ more
+    R11 = np.array([[0.05]])        # Moderate control effort penalty
 
     # Solve Continuous Algebraic Riccati Equation
-    P = solve_continuous_are(A, B, Q, R)
-    K_oc = np.linalg.inv(R) @ B.T @ P
-    K_oc = K_oc.flatten()
+    P11 = solve_continuous_are(A11, B11, Q11, R11)
+    K_oc11 = np.linalg.inv(R11) @ B11.T @ P11
+    K_oc11 = K_oc11.flatten()
 
-    print("LQR gain K_oc =", K_oc)
+    print("LQR gain K_oc =", K_oc11)
 
     # Closed-loop dynamics
-    A_cl = A - B @ K_oc.reshape(1, -1)
-    X0 = np.array([0, 0, np.pi/4, 0])
-    t_span = [0, 20]
-    t_eval = np.linspace(t_span[0], t_span[1], 1000)
-    sol = solve_ivp(lambda t, x: A_cl @ x, t_span, X0, t_eval=t_eval)
+    A_cl11 = A11 - B11 @ K_oc11.reshape(1, -1)
+    X011 = np.array([0, 0, np.pi/4, 0])
+    t_span11 = [0, 20]
+    t_eval11 = np.linspace(t_span11[0], t_span11[1], 1000)
+    sol11 = solve_ivp(lambda t, x: A_cl11 @ x, t_span11, X011)
 
-    x_t = sol.y
-    t = sol.t
-    phi_t = -K_oc @ x_t
+    x_t11 = sol11.y
+    t11 = sol11.t
+    phi_t11 = -K_oc11 @ x_t11
 
     # Plotting
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(t, x_t[0], label=r"$\Delta x(t)$")
-    plt.plot(t, x_t[2], label=r"$\Delta \theta(t)$")
+    plt.plot(t11, x_t11[0], label=r"$\Delta x(t)$")
+    plt.plot(t11, x_t11[2], label=r"$\Delta \theta(t)$")
     plt.axhline(np.pi/2, color='red', linestyle='--', label=r"$\pm \pi/2$")
     plt.axhline(-np.pi/2, color='red', linestyle='--')
     plt.xlabel("Time [s]")
@@ -2115,7 +2113,7 @@ def _(a, g):
     plt.legend()
 
     plt.subplot(1, 2, 2)
-    plt.plot(t, phi_t, label=r"$\Delta \phi(t)$")
+    plt.plot(t11, phi_t11, label=r"$\Delta \phi(t)$")
     plt.axhline(np.pi/2, color='red', linestyle='--')
     plt.axhline(-np.pi/2, color='red', linestyle='--')
     plt.xlabel("Time [s]")
@@ -2125,7 +2123,7 @@ def _(a, g):
 
     plt.tight_layout()
     plt.show()
-    return A, B, R, np, plt, solve_ivp
+    return
 
 
 @app.cell(hide_code=True)
