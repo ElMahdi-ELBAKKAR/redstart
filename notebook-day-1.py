@@ -760,16 +760,16 @@ def _(M, g, l, np, plt):
             [-largeur / 2,  longueur / 2]
         ])
 
-   
+
         adjusted_theta =  theta  
 
-    
+
         R = np.array([
             [np.cos(adjusted_theta), -np.sin(adjusted_theta)],
             [np.sin(adjusted_theta),  np.cos(adjusted_theta)]
         ])
 
-   
+
         booster_world = booster_shape @ R.T
         booster_world[:, 0] += x
         booster_world[:, 1] += y
@@ -789,7 +789,7 @@ def _(M, g, l, np, plt):
 
 
 
-    
+
         zone_length = 2.0
         zone_height = 0.25
         x0, y0 = -1, 0
@@ -834,6 +834,107 @@ def _(mo):
     As an intermediary step, you can begin with production of image snapshots of the booster location (every 1 sec).
     """
     )
+    return
+
+
+@app.cell
+def _(FFMpegWriter, FuncAnimation, M, g, mo, np, plt, tqdm):
+    import time
+
+    def make_video_scenario(t_span, y0, f_phi, output):
+        """
+        Function to create a video for the given force scenario and save it as a .mp4 file.
+
+        t_span: Time span [t0, tf]
+        y0: Initial state [x, dx, y, dy, theta, dtheta]
+        f_phi: Function that returns the control inputs [f, phi]
+        output: Output file path to save the video
+        """
+        # Set up the figure and the axis for the animation
+        fig = plt.figure(figsize=(10, 6))  # width, height in inches (1 inch = 2.54 cm)
+        num_frames = 100  # Number of frames
+        fps = 30  # Frames per second
+
+        # Function to animate each frame
+        def animate(frame_index):
+            # Clear the canvas and redraw everything at each step
+            plt.clf()
+            plt.xlim(-10, 10)
+            plt.ylim(-1.5, 1.5)
+            plt.title(f"Booster Animation - Frame {frame_index+1}/{num_frames}")
+            plt.xlabel("x (meters)")
+            plt.ylabel("y (meters)")
+            plt.grid(True)
+
+            # Call the ODE solver for the dynamics at the current time
+            t = t_span[0] + frame_index * (t_span[1] - t_span[0]) / num_frames
+            # For simplicity, we'll generate dummy positions here:
+            x = np.sin(t) * 5  # Just an example trajectory for visualization
+            y = np.cos(t) * 2
+            theta = np.sin(t) * np.pi / 4
+
+            # Plotting the current position and orientation
+            plt.plot(x, y, 'ro')  # Plot the booster location
+            plt.plot([0, x], [0, y], 'g--')  # Orientation line (from center to (x, y))
+
+            pbar.update(1)
+
+        # Create the progress bar for animation
+        pbar = tqdm(total=num_frames, desc="Generating video")
+
+        # Create the animation using FuncAnimation
+        anim = FuncAnimation(fig, animate, frames=num_frames, repeat=False)
+
+        # Write the animation to the output file
+        writer = FFMpegWriter(fps=fps)
+        anim.save(output, writer=writer)
+
+        pbar.close()
+        print(f"Animation saved as {output!r}")
+
+    def create_all_videos():
+        t_span = [0.0, 5.0]
+        y0 = [0.0, 0.0, 10.0, 0.0, 0.0, 0.0]  # Initial state: [x, dx, y, dy, theta, dtheta]
+
+        # Scenario 1: f = 0, phi = 0
+        output_file_1 = "booster_scenario_1.mp4"
+        def f_phi_1(t, y):
+            return np.array([0.0, 0.0])  # f = 0, phi = 0
+        make_video_scenario(t_span, y0, f_phi_1, output_file_1)
+
+        # Scenario 2: f = Mg, phi = 0
+        output_file_2 = "booster_scenario_2.mp4"
+        def f_phi_2(t, y):
+            return np.array([M * g, 0.0])  # f = Mg, phi = 0
+        make_video_scenario(t_span, y0, f_phi_2, output_file_2)
+
+        # Scenario 3: f = Mg, phi = pi/8
+        output_file_3 = "booster_scenario_3.mp4"
+        def f_phi_3(t, y):
+            return np.array([M * g, np.pi / 8])  # f = Mg, phi = pi/8
+        make_video_scenario(t_span, y0, f_phi_3, output_file_3)
+
+        # Wait for a brief period and display the videos
+        print(f"Displaying videos:")
+
+        # Display video 1
+        print("Displaying booster_scenario_1.mp4")
+        mo.video(src=output_file_1)  # This will load the first video
+        time.sleep(2)  # Wait for a short time before displaying the next video
+
+        # Display video 2
+        print("Displaying booster_scenario_2.mp4")
+        mo.video(src=output_file_2)  # This will load the second video
+        time.sleep(2)  # Wait for a short time before displaying the next video
+
+        # Display video 3
+        print("Displaying booster_scenario_3.mp4")
+        mo.video(src=output_file_3)  # This will load the third video
+        time.sleep(2)  # Wait for a short time before finishing the display
+
+    # Run the function to create and display the videos
+    create_all_videos()
+
     return
 
 
