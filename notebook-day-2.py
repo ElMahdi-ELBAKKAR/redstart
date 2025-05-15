@@ -1043,8 +1043,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
-
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     Using the Taylor expansions of the dynamics near equilibrium, and assuming small \( \theta \) and \( \phi \):
@@ -1068,7 +1068,8 @@ def _(mo):
     \]
 
     This gives the approximate evolution of the system in a small neighborhood of the equilibrium.
-    """)
+    """
+    )
     return
 
 
@@ -1087,6 +1088,126 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
+    mo.md(r"""
+    ## ⭐ Answer
+
+    We linearized the system around the equilibrium:
+
+    - \( \theta = 0 \), \( \phi = 0 \), \( f = Mg \)
+    - Small angle approximations: \( \sin(\theta + \phi) \approx \theta + \phi \), \( \cos(\theta + \phi) \approx 1 \)
+
+    From the linearized dynamics:
+
+    \[
+    \begin{aligned}
+    \Delta \ddot{x} &= -g (\Delta \theta + \Delta \phi) \\
+    \Delta \ddot{y} &= \frac{1}{M} \Delta f \\
+    \Delta \ddot{\theta} &= -\frac{Mg \ell}{J} \Delta \phi
+    \end{aligned}
+    \]
+
+    We define the state vector:
+
+    \[
+    \Delta X =
+    \begin{bmatrix}
+    \Delta x \\
+    \Delta \dot{x} \\
+    \Delta y \\
+    \Delta \dot{y} \\
+    \Delta \theta \\
+    \Delta \dot{\theta}
+    \end{bmatrix}, \quad
+    \Delta \dot{X} =
+    \begin{bmatrix}
+    \Delta \dot{x} \\
+    \Delta \ddot{x} \\
+    \Delta \dot{y} \\
+    \Delta \ddot{y} \\
+    \Delta \dot{\theta} \\
+    \Delta \ddot{\theta}
+    \end{bmatrix}
+    \]
+
+    And the input vector:
+
+    \[
+    \Delta u =
+    \begin{bmatrix}
+    \Delta f \\
+    \Delta \phi
+    \end{bmatrix}
+    \]
+
+    So the system can be written as:
+
+    \[
+    \Delta \dot{X} = A \Delta X + B \Delta u
+    \]
+
+    ### Matrice A
+
+    $$
+    A =
+    \begin{bmatrix}
+    0 & 1 & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & -{g} & 0 \\
+    0 & 0 & 0 & 1 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0 & 1 \\
+    0 & 0 & 0 & 0 & 0 & 0
+    \end{bmatrix}
+    $$
+
+    ### Matrice B
+
+    $$
+    B =
+    \begin{bmatrix}
+    0 & 0 \\
+    0 & -{g} \\
+    0 & 0 \\
+    \frac{1}{{{M}}} & 0 \\
+    0 & 0 \\
+    0 & {-\frac{Mgl}{J}}
+    \end{bmatrix}
+    $$
+
+    """)
+    return
+
+
+@app.cell
+def _(J, M, g, l, np):
+    # Precompute gain for d²θ equation
+    a = M * g * l / J  # = (1 * 1 * 1) / (1 * 1² / 3) = 3
+
+    # State matrix A
+    A = np.array([
+        [0, 1, 0, 0,  0, 0],
+        [0, 0, 0, 0, -g, 0],
+        [0, 0, 0, 1,  0, 0],
+        [0, 0, 0, 0,  0, 0],
+        [0, 0, 0, 0,  0, 1],
+        [0, 0, 0, 0,  0, 0]
+    ])
+
+    # Input matrix B
+    B = np.array([
+        [0,     0],
+        [0,   -g],
+        [0,     0],
+        [1/M,   0],
+        [0,     0],
+        [0,   -a]
+    ])
+
+    A, B
+    return A, B, a
+
+
+@app.cell(hide_code=True)
+def _(mo):
     mo.md(
         r"""
     ## 🧩 Stability
@@ -1094,6 +1215,37 @@ def _(mo):
     Is the generic equilibrium asymptotically stable?
     """
     )
+    return
+
+
+app._unparsable_cell(
+    r"""
+    ## ⭐ Answer
+
+    To determine whether the generic equilibrium is asymptotically stable, we analyze the eigenvalues of the linearized system matrix \( A \) around that equilibrium.
+
+    We find:
+
+    \[
+    \text{Eig}(A) = \{0, 0, 0, 0, 0, 0\}
+    \]
+
+    This means that all eigenvalues have zero real parts. Therefore:
+
+    - The system is not asymptotically stable (since no eigenvalue has a negative real part),
+    - It is also not unstable (since no eigenvalue has a positive real part),
+    - The equilibrium is classified as *marginally stable*.
+    """,
+    column=None, disabled=False, hide_code=True, name="_"
+)
+
+
+@app.cell
+def _(A, np):
+
+
+    eigvals = np.linalg.eigvals(A)
+    print("Eigenvalues:", eigvals)
     return
 
 
@@ -1107,6 +1259,47 @@ def _(mo):
     """
     )
     return
+
+
+app._unparsable_cell(
+    r"""
+    ## ⭐ Answer
+    ## Controllability of the System
+
+    The system is controllable if the controllability matrix:
+
+    $$
+    \mathcal{C} = \begin{bmatrix}
+    B & AB & A^2 B & \cdots & A^{n-1} B
+    \end{bmatrix}
+    $$
+
+    has full rank, i.e 
+
+    $$
+    \text{rank}(\mathcal{C}) = n
+    $$
+
+    where \( n = 6 \) is the number of state variables.
+    """,
+    column=None, disabled=False, hide_code=True, name="_"
+)
+
+
+@app.cell
+def _(A, B, np):
+
+    from numpy.linalg import matrix_rank
+
+
+    n = A.shape[0]
+    controllability_matrix = B
+    for i in range(1, n):
+        controllability_matrix = np.hstack((controllability_matrix, np.linalg.matrix_power(A, i) @ B))
+    rank = matrix_rank(controllability_matrix)
+    print(f"Rank of controllability matrix: {rank}")
+    print("System is controllable" if rank == n else "System is NOT controllable")
+    return (matrix_rank,)
 
 
 @app.cell(hide_code=True)
@@ -1126,6 +1319,181 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
+    mo.md(r"""
+    ## ⭐ Answer
+
+    We reduce our analysis to the lateral dynamics:
+
+    - *State variables*: \( \Delta x, \Delta \dot{x}, \Delta \theta, \Delta \dot{\theta} \)
+
+    - *Input*: \( \Delta \phi \)
+
+    - Assume \( f = Mg \) is constant
+
+    ---
+
+    ### Linearized Equations
+
+    From the full linearized model:
+
+    \[
+    \begin{aligned}
+    \Delta \ddot{x} &= -g (\Delta \theta + \Delta \phi) \\
+    \Delta \ddot{\theta} &= -\frac{Mg\ell}{J} \Delta \phi
+    \end{aligned}
+    \]
+
+    We rewrite this in *state-space form* with:
+
+    \[
+    \Delta X_r = 
+    \begin{bmatrix}
+    \Delta x \\
+    \Delta \dot{x} \\
+    \Delta \theta \\
+    \Delta \dot{\theta}
+    \end{bmatrix}, \quad
+    \Delta u_r = \Delta \phi
+    \]
+
+    The state-space model is:
+
+    \[
+    \dot{\Delta X_r} = A_r \Delta X_r + B_r \Delta u_r
+    \]
+
+    With:
+
+    \[
+    A_r =
+    \begin{bmatrix}
+    0 & 1 & 0 & 0 \\
+    0 & 0 & -g & 0 \\
+    0 & 0 & 0 & 1 \\
+    0 & 0 & 0 & 0
+    \end{bmatrix}, \quad
+    B_r =
+    \begin{bmatrix}
+    0 \\
+    -g \\
+    0 \\
+    -\dfrac{Mg\ell}{J}
+    \end{bmatrix}
+    \]
+
+    Using \( M = 1 \), \( g = 1 \), \( \ell = 1 \), \( J = \frac{1}{3} \), we get:
+
+    \[
+    B_r =
+    \begin{bmatrix}
+    0 \\
+    -1 \\
+    0 \\
+    -3
+    \end{bmatrix}
+    \]
+
+    Conclusion
+
+    The *reduced state-space model* is:
+
+    \[
+    \dot{\Delta X_r} = A_r \Delta X_r + B_r \Delta \phi
+    \]
+
+    With:
+
+    \[
+    A_r =
+    \begin{bmatrix}
+    0 & 1 & 0 & 0 \\
+    0 & 0 & -1 & 0 \\
+    0 & 0 & 0 & 1 \\
+    0 & 0 & 0 & 0
+    \end{bmatrix}, \quad
+    B_r =
+    \begin{bmatrix}
+    0 \\
+    -1 \\
+    0 \\
+    -3
+    \end{bmatrix}
+    \]
+
+    We computed the *rank of the controllability matrix*:
+
+    \[
+    \boxed{\text{rank} = 4}
+    \]
+
+    ---
+
+    ### Final Answer
+
+     *Yes, the reduced system is **fully controllable* with the input \( \Delta \phi \).
+    """)
+    return
+
+
+@app.cell
+def _(a, g, matrix_rank, np):
+
+
+    # Reduced A and B matrices
+    Ar = np.array([
+        [0, 1, 0, 0],
+        [0, 0, -g, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0]
+    ])
+
+    Br = np.array([
+        [0],
+        [-g],
+        [0],
+        [-a]
+    ])
+
+    # Controllability matrix
+    Cr = np.hstack([Br, Ar @ Br, Ar @ Ar @ Br, Ar @ Ar @ Ar @ Br])
+    rank_Cr = matrix_rank(Cr)
+
+    # Output
+    print("Reduced A matrix:\n", Ar)
+    print("\nReduced B matrix:\n", Br)
+    print("\nControllability matrix rank:", rank_Cr)
+
+
+
+
+    # Reduced A and B matrices
+    Ar = np.array([
+        [0, 1, 0, 0],
+        [0, 0, -g, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0]
+    ])
+
+    Br = np.array([
+        [0],
+        [-g],
+        [0],
+        [-a]
+    ])
+
+    # Controllability matrix
+    Cr = np.hstack([Br, Ar @ Br, Ar @ Ar @ Br, Ar @ Ar @ Ar @ Br])
+    rank_Cr = matrix_rank(Cr)
+
+    # Output
+    print("Reduced A matrix:\n", Ar)
+    print("\nReduced B matrix:\n", Br)
+    print("\nControllability matrix rank:", rank_Cr)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
     mo.md(
         r"""
     ## 🧩 Linear Model in Free Fall
@@ -1134,6 +1502,11 @@ def _(mo):
     $x(0)=0$, $\dot{x}(0)=0$, $\theta(0) = 45 / 180  \times \pi$  and $\dot{\theta}(0) =0$. What do you see? How do you explain it?
     """
     )
+    return
+
+
+@app.cell
+def _():
     return
 
 
