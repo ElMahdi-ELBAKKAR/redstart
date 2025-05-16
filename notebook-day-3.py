@@ -1687,11 +1687,21 @@ def _(mo):
         r"""
     ## ⭐ Answer
 
-    This vector \(h\) represents the center of mass of the booster. It takes into account:
+    The vector \(h\) is not the center of mass of the booster, but the position of a point located at a distance \( \frac{\ell}{3} \) from the center of mass along the main axis of the booster. It represents the effect of the booster’s tilt on its position.
 
-    - **Horizontal Position:** The term \(x - \frac{\ell}{3} \sin \theta\) adjusts the x-coordinate by subtracting the horizontal offset due to the booster’s tilt (given by the angle \( \theta \)).
+    ### Components:
 
-    - **Vertical Position:** The term \(y + \frac{\ell}{3} \cos \theta\) adjusts the y-coordinate by adding the vertical offset due to the tilt, which effectively moves the reference point to the center of mass.
+    - **Horizontal Component:**  
+      \( x - \frac{\ell}{3} \sin \theta \)  
+      This term adjusts the x-coordinate by accounting for the horizontal displacement caused by the booster’s tilt (angle \( \theta \)).
+
+    - **Vertical Component:**  
+      \( y + \frac{\ell}{3} \cos \theta \)  
+      This term adjusts the y-coordinate by adding the vertical offset due to the tilt,  capturing the overall height relative to the base.
+
+    ### Geometric Interpretation:
+
+    This vector tracks the position of a point that is shifted vertically and horizontally from the center of mass as the booster tilts.
 
     """
     )
@@ -1699,9 +1709,9 @@ def _(mo):
 
 
 @app.cell
-def _(plt):
-    x1, y1 = 2, 1 
-    x2, y2 = 0, 3 
+def _(np, plt):
+    x1, y1 = 2, 1  
+    x2, y2 = 0, 3  
 
     center_x = (x1 + x2) / 2
     center_y = (y1 + y2) / 2
@@ -1709,16 +1719,21 @@ def _(plt):
     target_x = center_x - (1/3) * (x2 - center_x)
     target_y = center_y - (1/3) * (y2 - center_y)
 
+    flamme_length = 0.5
+    angle = np.pi *1.9 
+
+    red1_x = x1 + flamme_length * np.cos(angle)
+    red1_y = y1 + flamme_length * np.sin(angle)
+
+
     plt.plot([x1, x2], [y1, y2], 'k-', linewidth=2, label='Booster')
-    plt.plot(target_x, target_y, 'o', color='#FFFF00', markersize=8, label='Center of Mass (h)')
+    plt.plot(target_x, target_y, 'o', color='#FFFF00', markersize=8, label='Point h') 
+    plt.plot([x1, red1_x], [y1, red1_y], 'r-', linewidth=2, label='flamme')
 
     plt.xlabel('X-axis')
     plt.ylabel('Y-axis')
-    plt.title('Booster with Center of Mass h')
     plt.legend(loc='upper right')
 
-    plt.xlim(min(x1, x2)-1, max(x1, x2)+1)
-    plt.ylim(min(y1, y2)-1, max(y1, y2)+1)
 
     plt.grid(True)
     plt.show()
@@ -1732,6 +1747,140 @@ def _(mo):
     ## 🧩 First and Second-Order Derivatives
 
     Compute $\dot{h}$ as a function of $\dot{x}$, $\dot{y}$, $\theta$ and $\dot{\theta}$ (and constants) and then $\ddot{h}$ as a function of $\theta$ and $z$ (and constants) when the auxiliary system is plugged in the booster.
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+
+    ## ⭐ Answer
+
+    We are given the output of the booster:
+
+    \[
+    h := 
+    \begin{bmatrix}
+    x - \dfrac{\ell}{3} \sin \theta \\
+    y + \dfrac{\ell}{3} \cos \theta
+    \end{bmatrix}
+    \]
+
+    ---
+
+    ###  Step 1: Compute $\dot{h}$
+
+    Using the chain rule:
+
+    - Derivative of $\sin \theta$ is $\cos \theta \cdot \dot{\theta}$
+    - Derivative of $\cos \theta$ is $- \sin \theta \cdot \dot{\theta}$
+
+    So:
+
+    \[
+    \dot{h} = 
+    \begin{bmatrix}
+    \dot{x} - \dfrac{\ell}{3} \cos \theta \cdot \dot{\theta} \\
+    \dot{y} - \dfrac{\ell}{3} \sin \theta \cdot \dot{\theta}
+    \end{bmatrix}
+    \]
+
+    ---
+
+    ###  Step 2: Compute $\ddot{h}$
+
+    We now differentiate $\dot{h}$:
+
+    \[
+    \ddot{h}_x = \ddot{x} + \dfrac{\ell}{3} \sin \theta \cdot \dot{\theta}^2 - \dfrac{\ell}{3} \cos \theta \cdot \ddot{\theta}
+    \]
+
+    \[
+    \ddot{h}_y = \ddot{y} - \dfrac{\ell}{3} \cos \theta \cdot \dot{\theta}^2 - \dfrac{\ell}{3} \sin \theta \cdot \ddot{\theta}
+    \]
+
+    ---
+
+    ### Step 3: Plug in the auxiliary system
+
+    From the auxiliary system, the applied force is:
+
+    \[
+    \begin{bmatrix}
+    f_x \\
+    f_y
+    \end{bmatrix}
+    = R\left(\theta + \dfrac{\pi}{2}\right)
+    \begin{bmatrix}
+    z + \dfrac{M \ell}{3} \dot{\theta}^2 \\
+    \dfrac{M \ell v_2}{3z}
+    \end{bmatrix}
+    \]
+
+    Using the rotation matrix:
+
+    \[
+    R\left(\theta + \dfrac{\pi}{2} \right) = 
+    \begin{bmatrix}
+    -\sin\theta & -\cos\theta \\
+    \cos\theta & -\sin\theta
+    \end{bmatrix}
+    \]
+
+    We obtain:
+
+    \[
+    f_x = -\sin\theta \left(z + \dfrac{M\ell}{3} \dot{\theta}^2 \right) - \cos\theta \left(\dfrac{M\ell v_2}{3z} \right)
+    \]
+
+    \[
+    f_y = \cos\theta \left(z + \dfrac{M\ell}{3} \dot{\theta}^2 \right) - \sin\theta \left(\dfrac{M\ell v_2}{3z} \right)
+    \]
+
+    We also adopt:
+
+    \[
+    \ddot{x} = \dfrac{f_x}{M}, \quad \ddot{y} = \dfrac{f_y}{M} - g, \quad \ddot{\theta} = \dfrac{v_2}{z}
+    \]
+
+
+    ---
+
+    ###  Step 4: Substitute everything into $\ddot{h}$
+
+    After substitution and simplification, we obtain:
+
+    \[
+    \boxed{
+    \ddot{h}_x = - \dfrac{z}{M} \sin\theta - \dfrac{2\ell}{3z} \cos\theta \cdot v_2
+    }
+    \]
+
+    \[
+    \boxed{
+    \ddot{h}_y = + \dfrac{z}{M} \cos\theta - \dfrac{2\ell}{3z} \sin\theta \cdot v_2 - g
+    }
+    \]
+
+    ---
+
+    ### Final Result
+
+    \[
+    \boxed{
+    \ddot{h} = 
+    \begin{bmatrix}
+    - \dfrac{z}{M} \sin\theta - \dfrac{2\ell}{3z} \cos\theta \cdot v_2 \\
+    + \dfrac{z}{M} \cos\theta - \dfrac{2\ell}{3z} \sin\theta \cdot v_2 - g
+    \end{bmatrix}
+    }
+    \]
+
+    This gives the second derivative of the output $h$ as a function of the state variables $\theta$, $\dot{\theta}$, the auxiliary variable $z$, and the virtual input $v_2$.
+
     """
     )
     return
