@@ -2179,7 +2179,7 @@ def _(M, g, l, np):
 
         # Step 2: Compute theta
         theta = np.arctan2(-v[0], v[1])
-    
+
 
         # Step 3: Compute z
         z = -np.linalg.norm(v)  # z < 0 assumed
@@ -2438,7 +2438,6 @@ def _(FuncAnimation, M, g, l, np, plt, traj):
 
 
 
-
     # Create figure
     fig, ax = plt.subplots(figsize=(10, 8))
     ax.set_xlim(-6, 6)
@@ -2450,8 +2449,8 @@ def _(FuncAnimation, M, g, l, np, plt, traj):
     ax.set_title('Booster Landing Trajectory')
 
     # Initialize elements
-    booster_line, = ax.plot([], [], 'k-', linewidth=3)
-    flame_line, = ax.plot([], [], 'r-', linewidth=2)
+    booster_line, = ax.plot([], [], 'k-', linewidth=3, transform=ax.transData)
+    #flame_line, = ax.plot([], [], 'r-', linewidth=2,transform=ax.transData) 
     point_h = ax.plot([], [], 'yo', markersize=8)[0]
     trajectory_line, = ax.plot([], [], 'b--', alpha=0.5)
     time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
@@ -2463,29 +2462,30 @@ def _(FuncAnimation, M, g, l, np, plt, traj):
 
     def init():
         booster_line.set_data([], [])
-        flame_line.set_data([], [])
+        #flame_line.set_data([], [])
         point_h.set_data([], [])
         trajectory_line.set_data([], [])
         time_text.set_text('')
-        return booster_line, flame_line, point_h, trajectory_line, time_text
+        return booster_line, point_h, trajectory_line, time_text
 
     def update(frame):
         t = frame * 0.1  # 10s total, 100 frames
         state = traj(t)
         x, dx, y, dy, theta, dtheta, z, dz, f, phi = state
 
-        # Update booster position
+        # Update booster position (flipped)
         x1 = x - l*np.sin(theta)
         y1 = y + l*np.cos(theta)
         x2 = x + l*np.sin(theta)
         y2 = y - l*np.cos(theta)
-        booster_line.set_data([x1, x2], [y1, y2])
+        booster_line.set_data([x2, x1], [y2, y1])
 
         # Update flame
         flame_length = 0.5 * (f / (M*g))
-        fx = x1 - flame_length*np.sin(theta + phi)
-        fy = y1 + flame_length*np.cos(theta + phi)
-        flame_line.set_data([x1, fx], [y1, fy])
+        fx = x2 - flame_length*np.sin(theta + phi)
+        fy = y2 + flame_length*np.cos(theta + phi)
+        #flame_line.set_data([y2, fy], [x2, fx])
+
 
         # Update point h
         hx = x - (l/3)*np.sin(theta)
@@ -2497,10 +2497,9 @@ def _(FuncAnimation, M, g, l, np, plt, traj):
         y_vals.append(y)
         trajectory_line.set_data(x_vals, y_vals)
 
-        # Update time
-        time_text.set_text(f'Time: {t:.1f}s\nThrust: {f:.2f}N\nTilt: {np.degrees(phi):.1f}°')
+  
 
-        return booster_line, flame_line, point_h, trajectory_line, time_text
+        return booster_line,  point_h, trajectory_line, time_text
 
     # Create animation
     ani = FuncAnimation(fig, update, frames=100, init_func=init,
