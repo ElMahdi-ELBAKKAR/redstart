@@ -1994,6 +1994,31 @@ def _(mo):
     return
 
 
+@app.cell
+def _(M, g, l):
+    def T(x, dx, y, dy, theta, dtheta, z, dz):
+        import numpy as np
+
+        # h
+        h_x = x - (l / 3) * np.sin(theta)
+        h_y = y + (l / 3) * np.cos(theta)
+
+        # dh
+        dh_x = dx - (l / 3) * np.cos(theta) * dtheta
+        dh_y = dy - (l / 3) * np.sin(theta) * dtheta
+
+        # d2h
+        d2h_x = (1 / M) * np.sin(theta) * z
+        d2h_y = (1 / M) * (-np.cos(theta) * z - M * g)
+
+        # d3h
+        d3h_x = (1 / M) * (np.cos(theta) * dtheta * z + np.sin(theta) * dz)
+        d3h_y = (1 / M) * (np.sin(theta) * dtheta * z - np.cos(theta) * dz)
+
+        return h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
