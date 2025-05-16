@@ -2036,6 +2036,178 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
+    mo.md(r"""
+
+    ## ⭐ Answer
+
+    ### Step 1: Use \( \ddot{h} \) to recover the direction of \( \theta \)
+
+    From the model:
+
+    \[
+    \ddot{h} = \frac{1}{M}
+    \begin{bmatrix}
+    \sin \theta \\
+    -\cos \theta
+    \end{bmatrix}
+    z - 
+    \begin{bmatrix}
+    0 \\
+    g
+    \end{bmatrix}
+    \Rightarrow
+    M \left( \ddot{h} + 
+    \begin{bmatrix}
+    0 \\
+    g
+    \end{bmatrix} \right) 
+    = z 
+    \begin{bmatrix}
+    \sin \theta \\
+    -\cos \theta
+    \end{bmatrix}
+    \]
+
+    We define:
+
+    \[
+    \vec{v} := M \left( \ddot{h}_x,\ \ddot{h}_y + g \right)
+    = z 
+    \begin{bmatrix}
+    \sin \theta \\
+    -\cos \theta
+    \end{bmatrix}
+    \]
+
+    Hence, we extract:
+
+    \[
+    \boxed{
+    \theta = \arctan2(v_x, -v_y)
+    }
+    \]
+
+    ---
+
+    ### Step 2: Use norm of \( \vec{v} \) to recover \( z \)
+
+    \[
+    z = \left\| \vec{v} \right\| = \sqrt{v_x^2 + v_y^2}
+    \Rightarrow
+    \boxed{
+    z = -\left\| \vec{v} \right\| \quad \text{(since } z < 0\text{)}
+    }
+    \]
+
+    ---
+
+    ### Step 3: Use \( h^{(3)} \) to recover \( \dot{\theta} \), \( \dot{z} \)
+
+    From the model:
+
+    \[
+    h^{(3)} = \frac{1}{M}
+    \left(
+    \begin{bmatrix}
+    \cos \theta \\
+    \sin \theta
+    \end{bmatrix} \dot{\theta} z +
+    \begin{bmatrix}
+    \sin \theta \\
+    -\cos \theta
+    \end{bmatrix} \dot{z}
+    \right)
+    \]
+
+    We write the linear system:
+
+    \[
+    A =
+    \begin{bmatrix}
+    \cos \theta \cdot z / M & \sin \theta / M \\
+    \sin \theta \cdot z / M & -\cos \theta / M
+    \end{bmatrix},
+    \quad
+    b =
+    \begin{bmatrix}
+    h^{(3)}_x \\
+    h^{(3)}_y
+    \end{bmatrix}
+    \Rightarrow
+    \boxed{
+    \begin{bmatrix}
+    \dot{\theta} \\
+    \dot{z}
+    \end{bmatrix}
+    = A^{-1} b
+    }
+    \]
+
+    ---
+
+    ### Step 4: Recover \( x, y \) from \( h \) and \( \theta \)
+
+    \[
+    \boxed{
+    x = h_x + \frac{\ell}{3} \sin \theta, \quad
+    y = h_y - \frac{\ell}{3} \cos \theta
+    }
+    \]
+
+    ---
+
+    ### Step 5: Recover \( \dot{x}, \dot{y} \) from \( \dot{h} \), \( \theta \), \( \dot{\theta} \)
+
+    \[
+    \boxed{
+    \dot{x} = \dot{h}_x + \frac{\ell}{3} \cos \theta \cdot \dot{\theta}, \quad
+    \dot{y} = \dot{h}_y + \frac{\ell}{3} \sin \theta \cdot \dot{\theta}
+    }
+    \]
+
+    """)
+    return
+
+
+@app.cell
+def _(M, g, l, np, theta):
+    def T_inv(h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y):
+ 
+        v_1 = M * d2h_x
+        v_2 = M * (d2h_y + g)
+        v = np.array([v_1, v_2])
+
+        # Step 2: Compute theta
+        theta17 = np.arctan2(v[0], -v[1])
+
+        # Step 3: Compute z
+        z = -np.linalg.norm(v)  # z < 0 assumed
+
+        # Step 4: Solve for dtheta and dz from h^(3)
+        sin_theta = np.sin(theta)
+        cos_theta = np.cos(theta)
+
+        A = np.array([
+            [cos_theta * z / M, sin_theta / M],
+            [sin_theta * z / M, -cos_theta / M]
+        ])
+        b = np.array([d3h_x, d3h_y])
+        dtheta, dz = np.linalg.solve(A, b)
+
+        # Step 5: Recover x, y
+        x = h_x + (l / 3) * sin_theta
+        y = h_y - (l / 3) * cos_theta
+
+        # Step 6: Recover dx, dy
+        dx = dh_x + (l / 3) * cos_theta * dtheta
+        dy = dh_y + (l / 3) * sin_theta * dtheta
+
+        return x, dx, y, dy, theta, dtheta, z, dz
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
     mo.md(
         r"""
     ## 🧩 Admissible Path Computation
