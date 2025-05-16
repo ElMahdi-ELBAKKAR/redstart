@@ -2245,23 +2245,23 @@ def _(mo):
 
 
 @app.cell
-def _(np):
+def _(M, g, np):
 
     from scipy.interpolate import CubicHermiteSpline
 
     def compute(x_0, dx_0, y_0, dy_0, theta_0, dtheta_0, z_0, dz_0,
                 x_tf, dx_tf, y_tf, dy_tf, theta_tf, dtheta_tf, z_tf, dz_tf,
-                tf, M=1.0, g=9.81, l=1.0):
-    
+                tf):
+
         # Time points (start and end)
         t_points = np.array([0, tf])
-    
+
         # Create cubic Hermite splines for each state variable
         x_spline = CubicHermiteSpline(t_points, [x_0, x_tf], [dx_0, dx_tf])
         y_spline = CubicHermiteSpline(t_points, [y_0, y_tf], [dy_0, dy_tf])
         theta_spline = CubicHermiteSpline(t_points, [theta_0, theta_tf], [dtheta_0, dtheta_tf])
         z_spline = CubicHermiteSpline(t_points, [z_0, z_tf], [dz_0, dz_tf])
-    
+
         def fun(t):
             # Get state at time t
             x = x_spline(t)
@@ -2272,27 +2272,27 @@ def _(np):
             dtheta = theta_spline(t, 1)
             z = z_spline(t)
             dz = z_spline(t, 1)
-        
+
             # Compute second derivatives for control inputs
             d2x = x_spline(t, 2)
             d2y = y_spline(t, 2)
             d2theta = theta_spline(t, 2)
-        
-        
+
+
             f_x = M * d2x
             f_y = M * (d2y + g)
-        
+
             # Total thrust magnitude
             f = np.sqrt(f_x**2 + f_y**2)
-        
+
             # Thrust angle (relative to vertical)
             thrust_angle = np.arctan2(f_x, f_y)
-        
-        
+
+
             phi = thrust_angle - theta
-        
+
             return x, dx, y, dy, theta, dtheta, z, dz, f, phi
-    
+
         return fun
     return (compute,)
 
@@ -2399,7 +2399,89 @@ def _(M, compute, g, l, np, plt):
 
     plt.tight_layout()
     plt.show()
-    return (theta,)
+    return theta, traj
+
+
+@app.cell
+def _(FuncAnimation, M, g, l, np, plt, traj):
+
+    from IPython.display import HTML
+
+
+
+
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(10, 8))
+    ax.set_xlim(-6, 6)
+    ax.set_ylim(-2, 22)
+    ax.set_aspect('equal')
+    ax.grid(True)
+    ax.set_xlabel('x position (m)')
+    ax.set_ylabel('y position (m)')
+    ax.set_title('Booster Landing Trajectory')
+
+    # Initialize elements
+    booster_line, = ax.plot([], [], 'k-', linewidth=3)
+    flame_line, = ax.plot([], [], 'r-', linewidth=2)
+    point_h = ax.plot([], [], 'yo', markersize=8)[0]
+    trajectory_line, = ax.plot([], [], 'b--', alpha=0.5)
+    time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
+
+    # Store trajectory for plotting
+    t_eval = np.linspace(0, 10, 200)
+    x_vals = []
+    y_vals = []
+
+    def init():
+        booster_line.set_data([], [])
+        flame_line.set_data([], [])
+        point_h.set_data([], [])
+        trajectory_line.set_data([], [])
+        time_text.set_text('')
+        return booster_line, flame_line, point_h, trajectory_line, time_text
+
+    def update(frame):
+        t = frame * 0.1  # 10s total, 100 frames
+        state = traj(t)
+        x, dx, y, dy, theta, dtheta, z, dz, f, phi = state
+    
+        # Update booster position
+        x1 = x - l*np.sin(theta)
+        y1 = y + l*np.cos(theta)
+        x2 = x + l*np.sin(theta)
+        y2 = y - l*np.cos(theta)
+        booster_line.set_data([x1, x2], [y1, y2])
+    
+        # Update flame
+        flame_length = 0.5 * (f / (M*g))
+        fx = x1 - flame_length*np.sin(theta + phi)
+        fy = y1 + flame_length*np.cos(theta + phi)
+        flame_line.set_data([x1, fx], [y1, fy])
+    
+        # Update point h
+        hx = x - (l/3)*np.sin(theta)
+        hy = y + (l/3)*np.cos(theta)
+        point_h.set_data([hx], [hy])
+    
+        # Update trajectory
+        x_vals.append(x)
+        y_vals.append(y)
+        trajectory_line.set_data(x_vals, y_vals)
+    
+        # Update time
+        time_text.set_text(f'Time: {t:.1f}s\nThrust: {f:.2f}N\nTilt: {np.degrees(phi):.1f}°')
+    
+        return booster_line, flame_line, point_h, trajectory_line, time_text
+
+    # Create animation
+    ani = FuncAnimation(fig, update, frames=100, init_func=init,
+                        blit=True, interval=50)
+
+    # Display in notebook
+    plt.close()
+    HTML(ani.to_html5_video())
+    return
 
 
 if __name__ == "__main__":
