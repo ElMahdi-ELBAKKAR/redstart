@@ -1702,7 +1702,6 @@ def _(mo):
     ### Geometric Interpretation:
 
     This vector tracks the position of a point that is shifted vertically and horizontally from the center of mass as the booster tilts.
-
     """
     )
     return
@@ -1756,7 +1755,6 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-
     ## ⭐ Answer
 
     We are given the output of the booster:
@@ -1880,7 +1878,6 @@ def _(mo):
     \]
 
     This gives the second derivative of the output $h$ as a function of the state variables $\theta$, $\dot{\theta}$, the auxiliary variable $z$, and the virtual input $v_2$.
-
     """
     )
     return
@@ -1893,6 +1890,249 @@ def _(mo):
     ## 🧩 Third and Fourth-Order Derivatives 
 
     Compute the third derivative $h^{(3)}$ of $h$ as a function of $\theta$ and $z$ (and constants) and then the fourth derivative $h^{(4)}$ of $h$ with respect to time as a function of $\theta$, $\dot{\theta}$, $z$, $\dot{z}$, $v$ (and constants) when the auxiliary system is on.
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+
+    ## ⭐ Answer
+
+    We previously obtained:
+
+    \[
+    \ddot{h} = 
+    \begin{bmatrix}
+    - \dfrac{z}{M} \sin\theta - \dfrac{2\ell}{3z} \cos\theta \cdot v_2 \\
+    + \dfrac{z}{M} \cos\theta - \dfrac{2\ell}{3z} \sin\theta \cdot v_2 - g
+    \end{bmatrix}
+    \]
+
+    ---
+
+    ## Step 1: Compute $\mathbf{h^{(3)}}$
+
+    We differentiate $\ddot{h}$ using the product and chain rules.
+
+    ### First, for $\ddot{h}_x$:
+
+    \[
+    \ddot{h}_x = -\dfrac{z}{M} \sin\theta - \dfrac{2\ell}{3z} \cos\theta \cdot v_2
+    \]
+
+    Then:
+
+    \[
+    h^{(3)}_x =
+    - \dfrac{\dot{z}}{M} \sin\theta 
+    - \dfrac{z}{M} \cos\theta \cdot \dot{\theta}
+    + \dfrac{2\ell}{3z^2} \dot{z} \cdot \cos\theta \cdot v_2
+    + \dfrac{2\ell}{3z} \sin\theta \cdot \dot{\theta} \cdot v_2
+    + \dfrac{2\ell}{3z} \cos\theta \cdot \dot{v}_2
+    \]
+
+    ---
+
+    ### Then, for $\ddot{h}_y$:
+
+    \[
+    \ddot{h}_y = \dfrac{z}{M} \cos\theta - \dfrac{2\ell}{3z} \sin\theta \cdot v_2 - g
+    \]
+
+    Then:
+
+    \[
+    h^{(3)}_y =
+    \dfrac{\dot{z}}{M} \cos\theta 
+    - \dfrac{z}{M} \sin\theta \cdot \dot{\theta}
+    - \dfrac{2\ell}{3z^2} \dot{z} \cdot \sin\theta \cdot v_2
+    - \dfrac{2\ell}{3z} \cos\theta \cdot \dot{\theta} \cdot v_2
+    - \dfrac{2\ell}{3z} \sin\theta \cdot \dot{v}_2
+    \]
+
+    ---
+
+    ## Final Result for $\mathbf{h^{(3)}}$
+
+    \[
+    \boxed{
+    h^{(3)} = 
+    \begin{bmatrix}
+    - \dfrac{\dot{z}}{M} \sin\theta 
+    - \dfrac{z}{M} \cos\theta \cdot \dot{\theta}
+    + \dfrac{2\ell}{3z^2} \dot{z} \cdot \cos\theta \cdot v_2
+    + \dfrac{2\ell}{3z} \sin\theta \cdot \dot{\theta} \cdot v_2
+    + \dfrac{2\ell}{3z} \cos\theta \cdot \dot{v}_2
+    \\[8pt]
+    \dfrac{\dot{z}}{M} \cos\theta 
+    - \dfrac{z}{M} \sin\theta \cdot \dot{\theta}
+    - \dfrac{2\ell}{3z^2} \dot{z} \cdot \sin\theta \cdot v_2
+    - \dfrac{2\ell}{3z} \cos\theta \cdot \dot{\theta} \cdot v_2
+    - \dfrac{2\ell}{3z} \sin\theta \cdot \dot{v}_2
+    \end{bmatrix}
+    }
+    \]
+
+    ---
+
+    ## Step 2: Compute $\mathbf{h^{(4)}}$
+
+    We now differentiate $h^{(3)}$.
+
+    Assuming:
+
+    - $\ddot{z} = v_1$
+    - $\ddot{\theta} = \dfrac{v_2}{z}$
+    - All variables are functions of $z$, $\theta$, $\dot{z}$, $\dot{\theta}$, $v_2$, $\dot{v}_2$, $v_1$
+
+    The result becomes quite long but remains a rational function of:
+
+    - $\theta$, $\dot{\theta}$, $z$, $\dot{z}$, $v_2$, $\dot{v}_2$, $v_1$
+    - Constants $\ell$, $M$
+
+    We omit the expanded algebra here but note that $h^{(4)}$ is affine in $(v_1, \dot{v}_2)$ and can be written as:
+
+    \[
+    h^{(4)} = A(\theta, \dot{\theta}, z, \dot{z}, v_2) \cdot 
+    \begin{bmatrix}
+    v_1 \\
+    \dot{v}_2
+    \end{bmatrix}
+    + \text{known terms}
+    \]
+
+    ---
+
+    ### Step 2.1: Term-by-term differentiation
+
+    We compute \( h^{(4)} = \frac{d}{dt} h^{(3)} \) component-wise.
+
+    ---
+
+    ### Horizontal component \( h^{(4)}_x \):
+
+    \[
+    \begin{aligned}
+    h^{(4)}_x = & - \frac{\ddot{z}}{M} \sin \theta - \frac{\dot{z}}{M} \cos \theta \cdot \dot{\theta} \\
+    & - \frac{\dot{z}}{M} \cos \theta \cdot \dot{\theta} - \frac{z}{M} \left( - \sin \theta \cdot \dot{\theta}^2 + \cos \theta \cdot \ddot{\theta} \right) \\
+    & + \frac{2 \ell}{3} \frac{d}{dt} \left( \frac{\dot{z}}{z^2} \cos \theta \cdot v_2 \right) \\
+    & + \frac{2 \ell}{3} \frac{d}{dt} \left( \frac{1}{z} \sin \theta \cdot \dot{\theta} \cdot v_2 \right) \\
+    & + \frac{2 \ell}{3} \frac{d}{dt} \left( \frac{1}{z} \cos \theta \cdot \dot{v}_2 \right)
+    \end{aligned}
+    \]
+
+    ---
+
+    ### Detailed derivative of the third term:
+
+    \[
+    \frac{d}{dt} \left( \frac{\dot{z}}{z^{2}} \cos \theta \cdot v_2 \right)
+    = \left( \frac{\ddot{z} z^{2} - 2 z \dot{z}^{2}}{z^{4}} \right) \cos \theta \cdot v_2
+    + \frac{\dot{z}}{z^{2}} \left( - \sin \theta \cdot \dot{\theta} \right) v_2
+    + \frac{\dot{z}}{z^{2}} \cos \theta \cdot \dot{v}_2
+    \]
+
+    ---
+
+    ### Detailed derivative of the fourth term:
+
+    \[
+    \frac{d}{dt} \left( \frac{1}{z} \sin \theta \cdot \dot{\theta} \cdot v_2 \right)
+    = - \frac{\dot{z}}{z^{2}} \sin \theta \cdot \dot{\theta} \cdot v_2
+    + \frac{1}{z} \cos \theta \cdot \dot{\theta}^2 \cdot v_2
+    + \frac{1}{z} \sin \theta \cdot \ddot{\theta} \cdot v_2
+    + \frac{1}{z} \sin \theta \cdot \dot{\theta} \cdot \dot{v}_2
+    \]
+
+    ---
+
+    ### Detailed derivative of the fifth term:
+
+    \[
+    \frac{d}{dt} \left( \frac{1}{z} \cos \theta \cdot \dot{v}_2 \right)
+    = - \frac{\dot{z}}{z^{2}} \cos \theta \cdot \dot{v}_2
+    - \frac{1}{z} \sin \theta \cdot \dot{\theta} \cdot \dot{v}_2
+    + \frac{1}{z} \cos \theta \cdot \ddot{v}_2
+    \]
+
+    ---
+
+    ### Step 2.2: Collection and simplification
+
+    Collect all terms and simplify. Recall:
+
+    - \( \ddot{z} = v_1 \)
+    - \( \ddot{\theta} = \frac{v_2}{z} \)
+    - \( \ddot{v}_2 \) remains an auxiliary unknown
+    - All variables depend on time
+
+    ---
+
+    ### Final full formula for \( h^{(4)}_x \):
+
+    \[
+    \begin{aligned}
+    h^{(4)}_x = 
+    & - \frac{v_1}{M} \sin \theta
+    - \frac{2 \dot{z}}{M} \cos \theta \cdot \dot{\theta}
+    + \frac{z}{M} \sin \theta \cdot \dot{\theta}^2
+    - \frac{z}{M} \cos \theta \cdot \frac{v_2}{z} \\
+    & + \frac{2 \ell}{3} \left[
+    \left( \frac{v_1}{z^2} - \frac{2 \dot{z}^2}{z^3} \right) \cos \theta \cdot v_2
+    - \frac{\dot{z}}{z^2} \sin \theta \cdot \dot{\theta} \cdot v_2
+    + \frac{\dot{z}}{z^2} \cos \theta \cdot \dot{v}_2
+    \right] \\
+    & + \frac{2 \ell}{3} \left[
+    - \frac{\dot{z}}{z^2} \sin \theta \cdot \dot{\theta} \cdot v_2
+    + \frac{1}{z} \cos \theta \cdot \dot{\theta}^2 \cdot v_2
+    + \frac{1}{z} \sin \theta \cdot \frac{v_2}{z} \cdot v_2
+    + \frac{1}{z} \sin \theta \cdot \dot{\theta} \cdot \dot{v}_2
+    \right] \\
+    & + \frac{2 \ell}{3} \left[
+    - \frac{\dot{z}}{z^2} \cos \theta \cdot \dot{v}_2
+    - \frac{1}{z} \sin \theta \cdot \dot{\theta} \cdot \dot{v}_2
+    + \frac{1}{z} \cos \theta \cdot \ddot{v}_2
+    \right]
+    \end{aligned}
+    \]
+
+    ---
+
+    ### Vertical component \( h^{(4)}_y \)
+
+    Similarly, by the same procedure:
+
+    \[
+    \begin{aligned}
+    h^{(4)}_y = 
+    & \frac{v_1}{M} \cos \theta
+    - \frac{2 \dot{z}}{M} \sin \theta \cdot \dot{\theta}
+    - \frac{z}{M} \cos \theta \cdot \dot{\theta}^2
+    - \frac{z}{M} \sin \theta \cdot \frac{v_2}{z} \\
+    & - \frac{2 \ell}{3} \left[
+    \left( \frac{v_1}{z^2} - \frac{2 \dot{z}^2}{z^3} \right) \sin \theta \cdot v_2
+    + \frac{\dot{z}}{z^2} \cos \theta \cdot \dot{\theta} \cdot v_2
+    + \frac{\dot{z}}{z^2} \sin \theta \cdot \dot{v}_2
+    \right] \\
+    & - \frac{2 \ell}{3} \left[
+    \frac{\dot{z}}{z^2} \cos \theta \cdot \dot{\theta} \cdot v_2
+    + \frac{1}{z} \sin \theta \cdot \dot{\theta}^2 \cdot v_2
+    - \frac{1}{z} \cos \theta \cdot \frac{v_2}{z} \cdot v_2
+    - \frac{1}{z} \cos \theta \cdot \dot{\theta} \cdot \dot{v}_2
+    \right] \\
+    & - \frac{2 \ell}{3} \left[
+    \frac{\dot{z}}{z^2} \sin \theta \cdot \dot{v}_2
+    - \frac{1}{z} \cos \theta \cdot \dot{\theta} \cdot \dot{v}_2
+    - \frac{1}{z} \sin \theta \cdot \ddot{v}_2
+    \right]
+    \end{aligned}
+    \]
+
+
     """
     )
     return
