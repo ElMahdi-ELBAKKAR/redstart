@@ -1753,8 +1753,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## ⭐ Answer
 
     We are given the output of the booster:
@@ -1769,14 +1768,9 @@ def _(mo):
 
     ---
 
-    ###  Step 1: Compute $\dot{h}$
+    ### Step 1: Compute $\dot{h}$
 
     Using the chain rule:
-
-    - Derivative of $\sin \theta$ is $\cos \theta \cdot \dot{\theta}$
-    - Derivative of $\cos \theta$ is $- \sin \theta \cdot \dot{\theta}$
-
-    So:
 
     \[
     \dot{h} = 
@@ -1788,9 +1782,9 @@ def _(mo):
 
     ---
 
-    ###  Step 2: Compute $\ddot{h}$
+    ### Step 2: Compute $\ddot{h}$
 
-    We now differentiate $\dot{h}$:
+    We differentiate again:
 
     \[
     \ddot{h}_x = \ddot{x} + \dfrac{\ell}{3} \sin \theta \cdot \dot{\theta}^2 - \dfrac{\ell}{3} \cos \theta \cdot \ddot{\theta}
@@ -1814,7 +1808,7 @@ def _(mo):
     = R\left(\theta + \dfrac{\pi}{2}\right)
     \begin{bmatrix}
     z + \dfrac{M \ell}{3} \dot{\theta}^2 \\
-    \dfrac{M \ell v_2}{3z}
+    \dfrac{M \ell}{3z} v_2
     \end{bmatrix}
     \]
 
@@ -1823,33 +1817,30 @@ def _(mo):
     \[
     R\left(\theta + \dfrac{\pi}{2} \right) = 
     \begin{bmatrix}
-    -\sin\theta & -\cos\theta \\
-    \cos\theta & -\sin\theta
+    - \sin\theta & \cos\theta \\
+    - \cos\theta & - \sin\theta
     \end{bmatrix}
     \]
 
-    We obtain:
+    Then:
 
     \[
-    f_x = -\sin\theta \left(z + \dfrac{M\ell}{3} \dot{\theta}^2 \right) - \cos\theta \left(\dfrac{M\ell v_2}{3z} \right)
+    f_x = - \sin\theta \left(z + \dfrac{M\ell}{3} \dot{\theta}^2 \right) + \cos\theta \left( \dfrac{M\ell v_2}{3z} \right)
     \]
 
     \[
-    f_y = \cos\theta \left(z + \dfrac{M\ell}{3} \dot{\theta}^2 \right) - \sin\theta \left(\dfrac{M\ell v_2}{3z} \right)
+    f_y = - \cos\theta \left(z + \dfrac{M\ell}{3} \dot{\theta}^2 \right) - \sin\theta \left( \dfrac{M\ell v_2}{3z} \right)
     \]
 
-    We also adopt:
+    And:
 
     \[
     \ddot{x} = \dfrac{f_x}{M}, \quad \ddot{y} = \dfrac{f_y}{M} - g, \quad \ddot{\theta} = \dfrac{v_2}{z}
     \]
 
-
     ---
 
-    ###  Step 4: Substitute everything into $\ddot{h}$
-
-    After substitution and simplification, we obtain:
+    ### Step 4: Substitute everything into $\ddot{h}$
 
     \[
     \boxed{
@@ -1877,9 +1868,7 @@ def _(mo):
     }
     \]
 
-    This gives the second derivative of the output $h$ as a function of the state variables $\theta$, $\dot{\theta}$, the auxiliary variable $z$, and the virtual input $v_2$.
-    """
-    )
+    """)
     return
 
 
@@ -1899,7 +1888,6 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-
     ## ⭐ Answer
 
     We previously obtained:
@@ -2131,8 +2119,6 @@ def _(mo):
     \right]
     \end{aligned}
     \]
-
-
     """
     )
     return
@@ -2151,6 +2137,82 @@ def _(mo):
     $$
     """
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## ⭐ Answer
+
+    ### 1. Recap of the Fourth Derivative Expression
+
+    From the previous results, the fourth derivative of the output \( h \) can be expressed as:
+
+    \[
+    h^{(4)} = A(\theta, \dot{\theta}, z, \dot{z}, v_2) \cdot 
+    \begin{bmatrix}
+    v_1 \\
+    \dot{v}_2
+    \end{bmatrix}
+    + b(\theta, \dot{\theta}, z, \dot{z}, v_2, \dot{v}_2)
+    \]
+
+    where:
+    - \( A(\cdots) \in \mathbb{R}^{2 \times 2} \) is a state-dependent matrix,
+    - \( b(\cdots) \in \mathbb{R}^2 \) is a vector of known nonlinear terms.
+
+    ---
+
+    ### 2. Introduction of a New Auxiliary System
+
+    We define a new auxiliary system with:
+
+    - Input:
+
+    \[
+    u = (u_1, u_2) \in \mathbb{R}^2
+    \]
+
+    - Output:
+
+    \[
+    v = (v_1, \dot{v}_2) \in \mathbb{R}^2
+    \]
+
+    This system controls directly the variables \( v_1 \) and \( \dot{v}_2 \) that appear in the expression of \( h^{(4)} \).
+
+    ---
+
+    ### 3. Control Design via Inversion
+
+    Assuming the matrix \( A(\theta, \dot{\theta}, z, \dot{z}, v_2) \) is invertible, we can solve for \( v \) as:
+
+    \[
+    v = A(\cdots)^{-1} \left( u - b(\cdots) \right)
+    \]
+
+    Substituting this back into the expression for \( h^{(4)} \), we obtain:
+
+    \[
+    h^{(4)} = A \cdot v + b = A \cdot A^{-1} (u - b) + b = u
+    \]
+
+    ---
+
+    ### 4. Conclusion
+
+    By controlling the new auxiliary system input \( u \), we *achieve the linearized dynamics* on the output \( h \):
+
+    \[
+    \boxed{
+    h^{(4)} = u
+    }
+    \]
+
+
+
+    """)
     return
 
 
