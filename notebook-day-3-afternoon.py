@@ -2016,7 +2016,7 @@ def _(M, g, l):
         d3h_y = (1 / M) * (np.sin(theta) * dtheta * z - np.cos(theta) * dz)
 
         return h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y
-    return
+    return (T,)
 
 
 @app.cell(hide_code=True)
@@ -2170,7 +2170,7 @@ def _(mo):
 
 
 @app.cell
-def _(M, g, l, np, theta):
+def _(M, g, l, np):
     def T_inv(h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y):
 
         v_1 = M * d2h_x
@@ -2178,7 +2178,8 @@ def _(M, g, l, np, theta):
         v = np.array([v_1, v_2])
 
         # Step 2: Compute theta
-        theta17 = np.arctan2(v[0], -v[1])
+        theta = np.arctan2(-v[0], v[1])
+    
 
         # Step 3: Compute z
         z = -np.linalg.norm(v)  # z < 0 assumed
@@ -2198,11 +2199,38 @@ def _(M, g, l, np, theta):
         x = h_x + (l / 3) * sin_theta
         y = h_y - (l / 3) * cos_theta
 
-        # Step 6: Recover dx, dy
+        # Step 6: Recover dx, dy 
         dx = dh_x + (l / 3) * cos_theta * dtheta
         dy = dh_y + (l / 3) * sin_theta * dtheta
 
         return x, dx, y, dy, theta, dtheta, z, dz
+    return (T_inv,)
+
+
+@app.cell
+def _(T, T_inv, np):
+    # Test case with realistic values
+    x99, dx99 = 2.0, 0.5
+    y99, dy99 = 10.0, -0.2
+    theta99, dtheta99 = np.pi/6, 0.1  # 30 degrees
+    z99, dz99 = -12.0, 0.3  # z < 0
+
+    # Forward transform
+    h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y = T(x99, dx99, y99, dy99, theta99, dtheta99, z99, dz99)
+
+    # Inverse transform
+    x_rec, dx_rec, y_rec, dy_rec, theta_rec, dtheta_rec, z_rec, dz_rec = T_inv(
+        h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y
+    )
+
+    # Verification
+    original = np.array([x99, dx99, y99, dy99, theta99, dtheta99, z99, dz99])
+    recovered = np.array([x_rec, dx_rec, y_rec, dy_rec, theta_rec, dtheta_rec, z_rec, dz_rec])
+
+    print("Original state:", original)
+    print("Recovered state:", recovered)
+    print("Maximum absolute error:", np.max(np.abs(original - recovered)))
+
     return
 
 
@@ -2399,7 +2427,7 @@ def _(M, compute, g, l, np, plt):
 
     plt.tight_layout()
     plt.show()
-    return theta, traj
+    return (traj,)
 
 
 @app.cell
@@ -2445,33 +2473,33 @@ def _(FuncAnimation, M, g, l, np, plt, traj):
         t = frame * 0.1  # 10s total, 100 frames
         state = traj(t)
         x, dx, y, dy, theta, dtheta, z, dz, f, phi = state
-    
+
         # Update booster position
         x1 = x - l*np.sin(theta)
         y1 = y + l*np.cos(theta)
         x2 = x + l*np.sin(theta)
         y2 = y - l*np.cos(theta)
         booster_line.set_data([x1, x2], [y1, y2])
-    
+
         # Update flame
         flame_length = 0.5 * (f / (M*g))
         fx = x1 - flame_length*np.sin(theta + phi)
         fy = y1 + flame_length*np.cos(theta + phi)
         flame_line.set_data([x1, fx], [y1, fy])
-    
+
         # Update point h
         hx = x - (l/3)*np.sin(theta)
         hy = y + (l/3)*np.cos(theta)
         point_h.set_data([hx], [hy])
-    
+
         # Update trajectory
         x_vals.append(x)
         y_vals.append(y)
         trajectory_line.set_data(x_vals, y_vals)
-    
+
         # Update time
         time_text.set_text(f'Time: {t:.1f}s\nThrust: {f:.2f}N\nTilt: {np.degrees(phi):.1f}°')
-    
+
         return booster_line, flame_line, point_h, trajectory_line, time_text
 
     # Create animation
