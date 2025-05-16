@@ -2036,8 +2036,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
-
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     ### Step 1: Use \( \ddot{h} \) to recover the direction of \( \theta \)
@@ -2164,15 +2164,15 @@ def _(mo):
     \dot{y} = \dot{h}_y + \frac{\ell}{3} \sin \theta \cdot \dot{\theta}
     }
     \]
-
-    """)
+    """
+    )
     return
 
 
 @app.cell
 def _(M, g, l, np, theta):
     def T_inv(h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y):
- 
+
         v_1 = M * d2h_x
         v_2 = M * (d2h_y + g)
         v = np.array([v_1, v_2])
@@ -2244,6 +2244,59 @@ def _(mo):
     return
 
 
+@app.cell
+def _(np):
+
+    from scipy.interpolate import CubicHermiteSpline
+
+    def compute(x_0, dx_0, y_0, dy_0, theta_0, dtheta_0, z_0, dz_0,
+                x_tf, dx_tf, y_tf, dy_tf, theta_tf, dtheta_tf, z_tf, dz_tf,
+                tf, M=1.0, g=9.81, l=1.0):
+    
+        # Time points (start and end)
+        t_points = np.array([0, tf])
+    
+        # Create cubic Hermite splines for each state variable
+        x_spline = CubicHermiteSpline(t_points, [x_0, x_tf], [dx_0, dx_tf])
+        y_spline = CubicHermiteSpline(t_points, [y_0, y_tf], [dy_0, dy_tf])
+        theta_spline = CubicHermiteSpline(t_points, [theta_0, theta_tf], [dtheta_0, dtheta_tf])
+        z_spline = CubicHermiteSpline(t_points, [z_0, z_tf], [dz_0, dz_tf])
+    
+        def fun(t):
+            # Get state at time t
+            x = x_spline(t)
+            dx = x_spline(t, 1)  # First derivative
+            y = y_spline(t)
+            dy = y_spline(t, 1)
+            theta = theta_spline(t)
+            dtheta = theta_spline(t, 1)
+            z = z_spline(t)
+            dz = z_spline(t, 1)
+        
+            # Compute second derivatives for control inputs
+            d2x = x_spline(t, 2)
+            d2y = y_spline(t, 2)
+            d2theta = theta_spline(t, 2)
+        
+        
+            f_x = M * d2x
+            f_y = M * (d2y + g)
+        
+            # Total thrust magnitude
+            f = np.sqrt(f_x**2 + f_y**2)
+        
+            # Thrust angle (relative to vertical)
+            thrust_angle = np.arctan2(f_x, f_y)
+        
+        
+            phi = thrust_angle - theta
+        
+            return x, dx, y, dy, theta, dtheta, z, dz, f, phi
+    
+        return fun
+    return (compute,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -2260,6 +2313,93 @@ def _(mo):
     """
     )
     return
+
+
+@app.cell
+def _(M, compute, g, l, np, plt):
+
+
+    # Test case
+    traj = compute(
+        x_0=5.0, dx_0=0.0, y_0=20.0, dy_0=-1.0, 
+        theta_0=-np.pi/8, dtheta_0=0.0, z_0=-M*g, dz_0=0.0,
+        x_tf=0.0, dx_tf=0.0, y_tf=4/3*l, dy_tf=0.0, 
+        theta_tf=0.0, dtheta_tf=0.0, z_tf=-M*g, dz_tf=0.0,
+        tf=10.0
+    )
+
+    # Time array
+    t = np.linspace(0, 10, 1000)
+
+    # Compute trajectory
+    results = np.array([traj(ti) for ti in t]).T
+
+    # Unpack results
+    x, dx, y, dy, theta, dtheta, z, dz, f, phi = results
+
+    # Create plots
+    plt.figure(figsize=(15, 12))
+
+    # Position plot
+    plt.subplot(3, 2, 1)
+    plt.plot(t, x, label='x(t)')
+    plt.plot(t, y, label='y(t)')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Position (m)')
+    plt.legend()
+    plt.grid(True)
+    plt.title('Position vs Time')
+
+    # Velocity plot
+    plt.subplot(3, 2, 2)
+    plt.plot(t, dx, label='dx(t)')
+    plt.plot(t, dy, label='dy(t)')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Velocity (m/s)')
+    plt.legend()
+    plt.grid(True)
+    plt.title('Velocity vs Time')
+
+    # Angle plot
+    plt.subplot(3, 2, 3)
+    plt.plot(t, np.degrees(theta), label='θ(t)')
+    plt.plot(t, np.degrees(phi), label='φ(t)')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Angle (degrees)')
+    plt.legend()
+    plt.grid(True)
+    plt.title('Angles vs Time')
+
+    # Thrust plot
+    plt.subplot(3, 2, 4)
+    plt.plot(t, f, label='Thrust f(t)')
+    plt.plot(t, -z, label='-z(t)')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Force (N)')
+    plt.legend()
+    plt.grid(True)
+    plt.title('Thrust vs Time')
+
+    # Angular velocity plot
+    plt.subplot(3, 2, 5)
+    plt.plot(t, np.degrees(dtheta), label='dθ/dt(t)')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Angular velocity (deg/s)')
+    plt.legend()
+    plt.grid(True)
+    plt.title('Angular Velocity vs Time')
+
+    # Trajectory plot
+    plt.subplot(3, 2, 6)
+    plt.plot(x, y)
+    plt.xlabel('x position (m)')
+    plt.ylabel('y position (m)')
+    plt.grid(True)
+    plt.title('Flight Trajectory (y vs x)')
+
+    plt.tight_layout()
+    plt.show()
+    return (theta,)
 
 
 if __name__ == "__main__":
