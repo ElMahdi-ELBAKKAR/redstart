@@ -1685,6 +1685,50 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    ## ⭐ Answer
+
+    This vector \(h\) represents the center of mass of the booster. It takes into account:
+
+    - **Horizontal Position:** The term \(x - \frac{\ell}{3} \sin \theta\) adjusts the x-coordinate by subtracting the horizontal offset due to the booster’s tilt (given by the angle \( \theta \)).
+
+    - **Vertical Position:** The term \(y + \frac{\ell}{3} \cos \theta\) adjusts the y-coordinate by adding the vertical offset due to the tilt, which effectively moves the reference point to the center of mass.
+
+    """
+    )
+    return
+
+
+@app.cell
+def _(plt):
+    x1, y1 = 2, 1 
+    x2, y2 = 0, 3 
+
+    center_x = (x1 + x2) / 2
+    center_y = (y1 + y2) / 2
+
+    target_x = center_x - (1/3) * (x2 - center_x)
+    target_y = center_y - (1/3) * (y2 - center_y)
+
+    plt.plot([x1, x2], [y1, y2], 'k-', linewidth=2, label='Booster')
+    plt.plot(target_x, target_y, 'o', color='#FFFF00', markersize=8, label='Center of Mass (h)')
+
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.title('Booster with Center of Mass h')
+    plt.legend(loc='upper right')
+
+    plt.xlim(min(x1, x2)-1, max(x1, x2)+1)
+    plt.ylim(min(y1, y2)-1, max(y1, y2)+1)
+
+    plt.grid(True)
+    plt.show()
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
     ## 🧩 First and Second-Order Derivatives
 
     Compute $\dot{h}$ as a function of $\dot{x}$, $\dot{y}$, $\theta$ and $\dot{\theta}$ (and constants) and then $\ddot{h}$ as a function of $\theta$ and $z$ (and constants) when the auxiliary system is plugged in the booster.
