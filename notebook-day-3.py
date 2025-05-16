@@ -1753,7 +1753,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     We are given the output of the booster:
@@ -1867,8 +1868,8 @@ def _(mo):
     \end{bmatrix}
     }
     \]
-
-    """)
+    """
+    )
     return
 
 
@@ -2142,7 +2143,8 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## ⭐ Answer
 
     ### 1. Recap of the Fourth Derivative Expression
@@ -2209,10 +2211,8 @@ def _(mo):
     h^{(4)} = u
     }
     \]
-
-
-
-    """)
+    """
+    )
     return
 
 
@@ -2225,6 +2225,36 @@ def _(mo):
     Implement a function `T` of `x, dx, y, dy, theta, dtheta, z, dz` that returns `h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y`.
     """
     )
+    return
+
+
+@app.cell
+def _(np):
+    def T(x, dx, y, dy, theta, dtheta, z, dz, v2, dv2, M, l, g):
+
+        h_x = x - (l / 3) * np.sin(theta)
+        h_y = y + (l / 3) * np.cos(theta)
+
+        # First derivative of h
+        dh_x = dx - (l / 3) * np.cos(theta) * dtheta
+        dh_y = dy - (l / 3) * np.sin(theta) * dtheta
+
+        # Second derivative of h
+        d2h_x = - (z / M) * np.sin(theta) - (2 * l / (3 * z)) * np.cos(theta) * v2
+        d2h_y = + (z / M) * np.cos(theta) - (2 * l / (3 * z)) * np.sin(theta) * v2 - g
+
+        # Third derivative of h
+        d3h_x = (- dz / M) * np.sin(theta) - (z / M) * np.cos(theta) * dtheta \
+            + (2 * l / (3 * z**2)) * dz * np.cos(theta) * v2 \
+            + (2 * l / (3 * z)) * np.sin(theta) * dtheta * v2 \
+            + (2 * l / (3 * z)) * np.cos(theta) * dv2
+
+        d3h_y = (dz / M) * np.cos(theta) - (z / M) * np.sin(theta) * dtheta \
+            - (2 * l / (3 * z**2)) * dz * np.sin(theta) * v2 \
+            - (2 * l / (3 * z)) * np.cos(theta) * dtheta * v2 \
+            - (2 * l / (3 * z)) * np.sin(theta) * dv2
+
+        return h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y
     return
 
 
